@@ -9,5 +9,8 @@ There are three devices which I would like to wire together:
    (Linux assigned the device an id usb-SIGMACHIP_USB_Keyboard-event-kbd)
 
 Installation
-pip install max7219
-pip install evdev
+pip3 install max7219
+pip3 install evdev
+pip3 install luma.led_matrix
+pip3 install pillow
+sudo apt-get install libopenjp2-7

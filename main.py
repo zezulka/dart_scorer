@@ -1,5 +1,7 @@
 import input_controller
+import max7219_controller
 
 poller = input_controller.EventPoller()
+display = max7219_controller.MAX7219()
 while True:
-    poller.next_event()
+    display.show_message(str(poller.next_event().value))

@@ -9,7 +9,7 @@ Example for seven segment displays.
 
 import time
 from datetime import datetime
-from luma.led_matrix.device import max7219
+from luma.led_matrix.device import max7219 as max7219_backend
 from luma.core.interface.serial import spi, noop
 from luma.core.virtual import viewport, sevensegment
 
@@ -64,13 +64,16 @@ def show_message_alt(seg, msg, delay=0.1):
         seg.text = msg[i:i + width]
         time.sleep(delay)
 
+class MAX7219:
+    def __init__(self):
+        serial = spi(port=0, device=0, gpio=noop())
+        self.device = max7219_backend(serial, cascaded=1)
+        self.seg = sevensegment(self.device)
+
+    def show_message(self, text):
+        show_message_vp(self.device, text)
 
 def main():
-    # create seven segment device
-    serial = spi(port=0, device=0, gpio=noop())
-    device = max7219(serial, cascaded=1)
-    seg = sevensegment(device)
-
     print('Simple text...')
     for _ in range(8):
         seg.text = "HELLO"
@@ -110,7 +113,3 @@ def main():
             seg.device.contrast(intensity * 16)
             time.sleep(0.1)
     device.contrast(0x90)
-
-
-if __name__ == '__main__':
-    main()

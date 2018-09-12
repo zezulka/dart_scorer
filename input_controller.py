@@ -27,6 +27,16 @@ CODE_TO_ACTION_DICT = { ecodes.KEY_KPENTER : Action.CONFIRM, ecodes.KEY_KPPLUS :
                         ecodes.KEY_KPMINUS : Action.DOUBLE, ecodes.KEY_BACKSPACE : Action.UNDO }
 # end of constants
 
+class EventType(Enum):
+    ACTION = 0
+    NUMBER = 1
+    NOTHING = 2
+
+class Event:
+    def __init__(self, e_type, value):
+        self.e_type = e_type
+        self.value = value
+
 def number_pressed(code):
     return code in CODE_TO_NUMBER_DICT
 
@@ -45,11 +55,17 @@ class EventPoller:
 
     def next_event(self):
         r,w,x = select([self.keyboard], [], [])
-        for event in filter((lambda e : e.type == ecodes.EV_KEY and e.value == KEY_DOWN), self.keyboard.read()):
+        num_tries = 1000 # an arbitrary number for now
+        event = None
+        while event == None and num_tries > 0:
+            num_tries -= 1
+            candidate = self.keyboard.read_one()
+            if candidate is not None and candidate.type == ecodes.EV_KEY and candidate.value == KEY_DOWN:
+                event = candidate
+        if event is not None:
             code = event.code
             if number_pressed(code):
-                print(code_to_number(code))
+                return Event(EventType.NUMBER, code_to_number(code))
             elif action_pressed(code):
-                print(code_to_action(code))
-            else:
-                print(categorize(event))
+                return Event(EventType.ACTION, code_to_action(code))
+        return Event(EventType.NOTHING, -1)
