@@ -35,7 +35,7 @@ LCD_LINE_2 = 0xC0 # LCD RAM address for the 2nd line
 E_PULSE = 0.0005
 E_DELAY = 0.0005
 
-class 1602A:
+class LcdDisplay:
     def __init__(self):
         GPIO.setwarnings(False)
         GPIO.setmode(GPIO.BCM)       # Use BCM GPIO numbers
@@ -67,9 +67,9 @@ class 1602A:
 
     def lcd_string(self, message, line):
         message = message.ljust(LCD_WIDTH," ")
-        self.lcd_byte(line, LCD_CMD)
+        lcd_byte(line, LCD_CMD)
         for i in range(LCD_WIDTH):
-            self.lcd_byte(ord(message[i]),LCD_CHR)
+            lcd_byte(ord(message[i]),LCD_CHR)
 
     def lcd_string_first_line(self, message):
         self.lcd_string(message, LCD_LINE_1)

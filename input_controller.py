@@ -22,7 +22,7 @@ class Action(Enum):
     DOUBLE = 2
     TRIPLE = 3
     UNDO = 4
-
+# KEY_NUMLOCK
 CODE_TO_ACTION_DICT = { ecodes.KEY_KPENTER : Action.CONFIRM, ecodes.KEY_KPPLUS : Action.TRIPLE, 
                         ecodes.KEY_KPMINUS : Action.DOUBLE, ecodes.KEY_BACKSPACE : Action.UNDO }
 # end of constants
@@ -53,6 +53,10 @@ class EventPoller:
     def __init__(self):
         self.keyboard = InputDevice(NUM_KEY_PATH)
 
+    def toggle_numlock(self):
+        self.keyboard.write(ecodes.EV_KEY, ecodes.KEY_NUMLOCK, 1)
+        self.keyboard.write(ecodes.EV_KEY, ecodes.KEY_NUMLOCK, 0)
+
     def next_event(self):
         r,w,x = select([self.keyboard], [], [])
         num_tries = 1000 # an arbitrary number for now
@@ -68,4 +72,6 @@ class EventPoller:
                 return Event(EventType.NUMBER, code_to_number(code))
             elif action_pressed(code):
                 return Event(EventType.ACTION, code_to_action(code))
+            else:
+                print(categorize(event))
         return Event(EventType.NOTHING, -1)
