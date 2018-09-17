@@ -55,13 +55,29 @@ class GameRound:
         return self.first_throw.points() + self.second_throw.points() + self.third_throw.points()
 
 class Game501:
-    def __init__(self):
+    class Renderer:
+        def __init__(self):
+            self.segment_d = max7219_controller.MAX7219()
+            self.lcd_d = lcd_display.LcdDisplay()
+
+        def action(self, action, input_ctrl):
+            if action in [input_controller.Action.DOUBLE, input_controller.Action.TRIPLE]:
+                input_ctrl.toggle_numlock()
+
+        def score(self, score):
+            self.lcd_d.lcd_string_first_line(score)
+
+        def warning(self, text):
+            self.lcd_d.lcd_string_second_line(text)
+            sleep(0.75)
+            self.lcd_d.lcd_string_second_line("")
+
+    def __init__(self, input_ctrl = input_controller.EventPoller(), renderer=Renderer()):
         self.points = 501
         self.darts_thrown = 0
         self.round = GameRound()
-        self.input_ctrl = input_controller.EventPoller()
-        self.segment_d = max7219_controller.MAX7219()
-        self.lcd_d = lcd_display.LcdDisplay()
+        self.input_ctrl = input_ctrl
+        self.renderer = renderer
         #Container which holds the text displayed to the LCD
         self.current_score = 12 * " "
 
@@ -70,40 +86,48 @@ class Game501:
         self.game_round.clear()
 
     def handle_action(self, action):
+        modif_score = self.score_for_current_throw()
         if action == input_controller.Action.DOUBLE:
-            self.input_ctrl.toggle_numlock()
-            self.current_score += "D"
+            modif_score = modif_score[:3] + 'D'
         elif action == input_controller.Action.TRIPLE:
-            self.input_ctrl.toggle_numlock()
-            self.current_score += "T"
+            modif_score = modif_score[:3] + 'T'
         elif action == input_controller.Action.CONFIRM:
-            self.input_ctrl.toggle_numlock()
             self.round.current_position += 1
+            modif_score = self.score_for_current_throw()
         elif action == input_controller.Action.UNDO:
-            self.current_score = ""
+            modif_score = " " * 4
+        return modif_score
     
+    def score_for_current_throw(self):
+        curr_pos_int = self.round.current_position.value[0]
+        return self.current_score[ ((curr_pos_int - 1) * 4) : (curr_pos_int * 4) ]
+
+    def substitute_score_for_current_throw(self, score):
+        if score == None or len(score) != 4:
+            raise ValueError("the score string must be of length 4")
+        curr_pos_int = self.round.current_position.value[0]
+        self.current_score = self.current_score[:((curr_pos_int - 1) * 4)] + score + self.current_score[(curr_pos_int * 4):]
+
     def game_loop(self):
         while True:
+            space = " "
             next_event = self.input_ctrl.next_event()
-            curr_pos = self.round.current_position.value[0]
             if next_event.e_type == input_controller.EventType.NUMBER: 
-                #segment_d.show_message(str(next_event.value))
                 next_digit = str(next_event.value)
-                score = self.current_score[((curr_pos - 1) * 4) : (curr_pos * 4) ]
-                if score == " " * 4:
-                    score = "  " + next_digit
-                elif match("  [0-9][ DT]", score):
+                score = self.score_for_current_throw()
+                if score == space * 4:
+                    score = space * 2 + next_digit + space
+                elif match(space * 2 + "[0-9][ DT]", score):
                     tens = score[2]
                     appendix = score[3]
                     if tens == "1" or (tens == "2" and next_digit in ["0", "5"]):
-                        score = tens + next_digit + appendix
+                        score = space + tens + next_digit + appendix
                     else:
-                        self.lcd_d.lcd_string_second_line(tens + next_digit + " not valid!")
-                        sleep(0.75)
-                        self.lcd_d.lcd_string_second_line("")
+                        self.renderer.warning(tens + next_digit + " not valid!")
                 else:
-                    self.lcd_d.lcd_string_second_line("hit <-")    
+                    self.renderer.warning("hit <-")
             elif next_event.e_type == input_controller.EventType.ACTION:
-                self.handle_action(next_event.value)
-            self.current_score = self.current_score[:((curr_pos - 1)* 4)] + score + self.current_score[(curr_pos * 4):]
-            self.lcd_d.lcd_string_first_line(self.current_score)
+                score = self.handle_action(next_event.value)
+                self.renderer.action(next_event.value, self.input_ctrl)
+            self.substitute_score_for_current_throw(score)
+            self.renderer.score(self.current_score)

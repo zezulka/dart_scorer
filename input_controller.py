@@ -59,7 +59,8 @@ class EventPoller:
 
     def next_event(self):
         r,w,x = select([self.keyboard], [], [])
-        num_tries = 1000 # an arbitrary number for now
+        # An arbitrary number for now
+        num_tries = 1000
         event = None
         while event == None and num_tries > 0:
             num_tries -= 1
