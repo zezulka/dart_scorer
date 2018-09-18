@@ -108,10 +108,12 @@ class Game501:
         curr_pos_int = self.round.current_position.value[0]
         self.current_score = self.current_score[:((curr_pos_int - 1) * 4)] + score + self.current_score[(curr_pos_int * 4):]
 
-    def game_loop(self):
+    def loop(self):
         while True:
             space = " "
             next_event = self.input_ctrl.next_event()
+            if not next_event:
+                return
             if next_event.e_type == input_controller.EventType.NUMBER: 
                 next_digit = str(next_event.value)
                 score = self.score_for_current_throw()

@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import unittest
 import game_logic
 from queue import Queue
@@ -14,17 +15,19 @@ class TestingPoller:
             self.event_queue.put(event) 
 
     def next_event(self):
+        if self.event_queue.empty():
+            return None
         return self.event_queue.get()
 
 # Just a noop implementation
 class TestingRenderer:
-    def action(_, __):
+    def action(_self, _, __):
         pass
 
-    def score(_, __):
+    def score(_self, _):
         pass
 
-    def warning(_, __):
+    def warning(_self, _):
         pass
 
 class TestGameLogic(unittest.TestCase):
@@ -36,8 +39,8 @@ class TestGameLogic(unittest.TestCase):
               ]
         game = game_logic.Game501(TestingPoller(evs), TestingRenderer())
         self.assertEqual(game.current_score, " " * 12)
-        
-        self.assertEqual(game.current_score, " 12D" + " " * 8)
+        game.loop() 
+        self.assertEqual(game.current_score, " 10 " + " " * 8)
 
 if __name__ == "__main__":
     unittest.main()

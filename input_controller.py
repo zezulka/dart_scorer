@@ -57,6 +57,7 @@ class EventPoller:
         self.keyboard.write(ecodes.EV_KEY, ecodes.KEY_NUMLOCK, 1)
         self.keyboard.write(ecodes.EV_KEY, ecodes.KEY_NUMLOCK, 0)
 
+    # Should return None when there is no event available at the moment.
     def next_event(self):
         r,w,x = select([self.keyboard], [], [])
         # An arbitrary number for now
