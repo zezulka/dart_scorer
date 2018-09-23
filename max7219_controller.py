@@ -71,7 +71,8 @@ class MAX7219:
         self.seg = sevensegment(self.device)
 
     def show_message(self, text):
-        show_message_vp(self.device, text)
+        self.seg.text = text
+        #show_message_vp(self.device, text)
 
 def main():
     print('Simple text...')

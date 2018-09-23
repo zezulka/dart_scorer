@@ -30,8 +30,11 @@ class TestingRenderer:
     def warning(_self, _):
         pass
 
+    def points(self, _):
+        pass
+
 class TestGameLogic(unittest.TestCase):
-    def test_score_substitution(self):
+    def test_single_score(self):
         evs = [
                   Event(EventType.NUMBER, 1),
                   Event(EventType.NUMBER, 0),
@@ -41,6 +44,38 @@ class TestGameLogic(unittest.TestCase):
         self.assertEqual(game.current_score, " " * 12)
         game.loop() 
         self.assertEqual(game.current_score, " 10 " + " " * 8)
+
+    def test_display_empty_after_one_round(self):
+        evs = [
+                  Event(EventType.NUMBER, 1),
+                  Event(EventType.NUMBER, 0),
+                  Event(EventType.ACTION, Action.CONFIRM)
+              ]
+        game = game_logic.Game501(TestingPoller(evs * 3), TestingRenderer())
+        game.loop()
+        self.assertEqual(game.current_score, " " * 12)
+
+    def test_whole_round(self):
+         evs = [
+                   Event(EventType.NUMBER, 1),
+                   Event(EventType.NUMBER, 0),
+                   Event(EventType.ACTION, Action.CONFIRM),
+               ]
+         game = game_logic.Game501(TestingPoller(evs * 3), TestingRenderer())
+         self.assertEqual(game.points, 501)
+         game.loop()
+         self.assertEqual(game.points, 471)
+
+    def test_two_rounds(self):
+         evs = [
+                   Event(EventType.NUMBER, 1),
+                   Event(EventType.NUMBER, 0),
+                   Event(EventType.ACTION, Action.CONFIRM),
+               ]
+         game = game_logic.Game501(TestingPoller(evs * 6), TestingRenderer())
+         self.assertEqual(game.points, 501)
+         game.loop()
+         self.assertEqual(game.points, 441)
 
 class TestPosition(unittest.TestCase):
     def test_add(self):
