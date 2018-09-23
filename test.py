@@ -42,5 +42,11 @@ class TestGameLogic(unittest.TestCase):
         game.loop() 
         self.assertEqual(game.current_score, " 10 " + " " * 8)
 
+class TestPosition(unittest.TestCase):
+    def test_add(self):
+        second = game_logic.Position.FIRST
+        second += 1
+        self.assertEqual(game_logic.Position.SECOND, second)
+
 if __name__ == "__main__":
     unittest.main()

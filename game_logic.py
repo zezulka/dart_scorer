@@ -17,11 +17,11 @@ class Throw:
 class Position(Enum):
     FIRST = 1,
     SECOND = 2,
-    THIRD = 3
+    THIRD = 3,
 
     # https://docs.python.org/3/reference/datamodel.html#special-method-names
     # += operator
-    def __iadd__(self, other):
+    def __add__(self, other):
         other = other % 3
         if other == 0:
             return self
@@ -29,17 +29,19 @@ class Position(Enum):
             if self == Position.FIRST:
                 return Position.SECOND
             elif self == Position.SECOND:
-                return Position.THIRD
+                return  Position.THIRD
             elif self == Position.THIRD:
                 return Position.FIRST
         elif other == 2:
             if self == Position.FIRST:
-                return Position.THIRD
+                return  Position.THIRD
             elif self == Position.SECOND:
                 return Position.FIRST
             elif self == Position.THIRD:
                 return Position.SECOND
-        raise ValueError("could not add, args: {} += {}".format(self, other))
+
+    def to_int(self):
+        return self.value[0]
 
 class GameRound:
     def __init__(self):
@@ -59,6 +61,9 @@ class Game501:
         def __init__(self):
             self.segment_d = max7219_controller.MAX7219()
             self.lcd_d = lcd_display.LcdDisplay()
+
+        def clean_up(self):
+            self.lcd_d.clean_up()
 
         def action(self, action, input_ctrl):
             if action in [input_controller.Action.DOUBLE, input_controller.Action.TRIPLE]:
@@ -81,6 +86,12 @@ class Game501:
         #Container which holds the text displayed to the LCD
         self.current_score = 12 * " "
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, _type, _value, _tb):
+        self.renderer.clean_up()
+
     def next_round(self):
         self.points -= self.round.points()
         self.game_round.clear()
@@ -99,13 +110,14 @@ class Game501:
         return modif_score
     
     def score_for_current_throw(self):
-        curr_pos_int = self.round.current_position.value[0]
+        print(self.round.current_position)
+        curr_pos_int = self.round.current_position.to_int()
         return self.current_score[ ((curr_pos_int - 1) * 4) : (curr_pos_int * 4) ]
 
     def substitute_score_for_current_throw(self, score):
         if score == None or len(score) != 4:
             raise ValueError("the score string must be of length 4")
-        curr_pos_int = self.round.current_position.value[0]
+        curr_pos_int = self.round.current_position.to_int()
         self.current_score = self.current_score[:((curr_pos_int - 1) * 4)] + score + self.current_score[(curr_pos_int * 4):]
 
     def loop(self):

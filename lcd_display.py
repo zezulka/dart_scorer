@@ -47,10 +47,8 @@ class LcdDisplay:
         GPIO.setup(LCD_D7, GPIO.OUT) # DB7
         self.lcd_init()
 
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_value, traceback):
+    # To be used with resource cleaning.
+    def clean_up(self):
         lcd_byte(0x01, LCD_CMD)
         self.lcd_string("Goodbye!",LCD_LINE_1)
         GPIO.cleanup()

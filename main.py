@@ -1,8 +1,8 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 import game_logic
 def main():
-    game = game_logic.Game501()
-    game.loop()
+    with game_logic.Game501() as game:
+        game.loop()
     return 0
 
 if __name__ == "__main__":
