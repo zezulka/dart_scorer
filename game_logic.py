@@ -80,14 +80,15 @@ class Game501:
             sleep(0.75)
             self.lcd_d.lcd_string_second_line("")
 
-    def __init__(self, input_ctrl = input_controller.EventPoller(), renderer=Renderer()):
-        self.points = 501
-        self.darts_thrown = 0
+    def __init__(self, num_players, input_ctrl, renderer=Renderer()):
         self.round = GameRound()
         self.input_ctrl = input_ctrl
         self.renderer = renderer
         #Container which holds the text displayed to the LCD
         self.current_score = 12 * " "
+        self.current_player = 0
+        self.num_players = num_players
+        self.players = [501] * num_players
 
     def __enter__(self):
         return self
@@ -96,8 +97,10 @@ class Game501:
         self.renderer.clean_up()
 
     def next_round(self):
-        self.points -= self.round.points()
-        self.game_round.clear()
+        self.players[self.current_player] -= self.round.points()
+        self.current_score = " " * 12
+        self.current_player = (self.current_player + 1) % self.num_players
+        self.round.clear()
 
     def handle_action(self, action):
         modif_score = self.score_for_current_throw()
@@ -107,11 +110,11 @@ class Game501:
             modif_score = modif_score[:3] + 'T'
         elif action == input_controller.Action.CONFIRM:
             self.save_points_for_current_throw()
-            if self.round.current_position == Position.THIRD:
-                self.points -= self.round.points()
-                self.current_score = " " * 12
             modif_score = " " * 4
             self.round.current_position += 1
+            # We have overflown the positions which means that the new round has started
+            if self.round.current_position == Position.FIRST:
+                self.next_round()
         elif action == input_controller.Action.UNDO:
             modif_score = " " * 4
         assert(len(modif_score) == 4)
@@ -148,11 +151,11 @@ class Game501:
         while True:
             space = " "
             next_event = self.input_ctrl.next_event()
+            score = self.score_for_current_throw()
             if not next_event:
                 return
             if next_event.e_type == input_controller.EventType.NUMBER: 
                 next_digit = str(next_event.value)
-                score = self.score_for_current_throw()
                 if match(space * 3 + "[ DT]", score):
                     appendix = score[3]
                     score = space * 2 + next_digit + appendix
@@ -170,4 +173,7 @@ class Game501:
                 self.renderer.action(next_event.value, self.input_ctrl)
             self.substitute_score_for_current_throw(score)
             self.renderer.score(self.current_score)
-            self.renderer.points(self.points)
+            points = str(self.players[self.current_player])
+            if self.num_players > 1:
+                points += " " + str(self.players[(self.current_player + 1) % self.num_players])
+            self.renderer.points(points)
