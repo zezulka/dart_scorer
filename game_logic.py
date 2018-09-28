@@ -5,6 +5,7 @@ from re import match
 from evdev import categorize, uinput, ecodes as e
 from time import sleep
 from enum import Enum
+from functools import reduce
 
 class Throw:
     def __init__(self, pts, multiplier):
@@ -92,12 +93,17 @@ class Game501:
 
     def __enter__(self):
         return self
+ 
+    def over(self):
+        return reduce(lambda x,y: x or y == 0, self.players, False)
 
     def __exit__(self, _type, _value, _tb):
         self.renderer.clean_up()
 
     def next_round(self):
-        self.players[self.current_player] -= self.round.points()
+        curr_pts = self.players[self.current_player] - self.round.points()
+        if curr_pts >= 0:
+            self.players[self.current_player] = curr_pts
         self.current_score = " " * 12
         self.current_player = (self.current_player + 1) % self.num_players
         self.round.clear()

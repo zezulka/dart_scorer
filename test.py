@@ -76,6 +76,53 @@ class TestGameLogic(unittest.TestCase):
          self.assertEqual(game.players[0], 501)
          game.loop()
          self.assertEqual(game.players[0], 441)
+     
+    def test_game(self):
+         evs = [
+                   Event(EventType.NUMBER, 2),
+                   Event(EventType.NUMBER, 0),
+                   Event(EventType.ACTION, Action.TRIPLE),
+                   Event(EventType.ACTION, Action.CONFIRM)
+               ]
+         evs = evs * 6
+         evs += [
+                   Event(EventType.NUMBER, 2),
+                   Event(EventType.NUMBER, 0),
+                   Event(EventType.ACTION, Action.TRIPLE),
+                   Event(EventType.ACTION, Action.CONFIRM)
+                ]
+
+         evs += [
+                   Event(EventType.NUMBER, 1),
+                   Event(EventType.NUMBER, 9),
+                   Event(EventType.ACTION, Action.TRIPLE),
+                   Event(EventType.ACTION, Action.CONFIRM)
+                ]
+         evs += [
+                   Event(EventType.NUMBER, 1),
+                   Event(EventType.NUMBER, 2),
+                   Event(EventType.ACTION, Action.DOUBLE),
+                   Event(EventType.ACTION, Action.CONFIRM)
+                ]
+         game = game_logic.Game501(1, TestingPoller(evs), TestingRenderer())
+         self.assertEqual(game.players[0], 501)
+         game.loop()
+         self.assertEqual(game.players[0], 0)
+         self.assertTrue(game.over())
+
+    def test_overthrow(self):
+         evs = [
+                   Event(EventType.NUMBER, 2),
+                   Event(EventType.NUMBER, 0),
+                   Event(EventType.ACTION, Action.TRIPLE),
+                   Event(EventType.ACTION, Action.CONFIRM)
+               ] * 9
+         game = game_logic.Game501(1, TestingPoller(evs), TestingRenderer())
+         self.assertEqual(game.players[0], 501)
+         game.loop()
+         # 501 - 360
+         self.assertEqual(game.players[0], 141)
+         self.assertFalse(game.over())
 
 class TestPosition(unittest.TestCase):
     def test_add(self):
