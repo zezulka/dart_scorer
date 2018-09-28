@@ -85,8 +85,8 @@ class Game501:
         self.round = GameRound()
         self.input_ctrl = input_ctrl
         self.renderer = renderer
-        #Container which holds the text displayed to the LCD
-        self.current_score = 12 * " "
+        self.__init_display_score = "  0 " * 3
+        self.current_display_score = self.__init_display_score
         self.current_player = 0
         self.num_players = num_players
         self.players = [501] * num_players
@@ -106,7 +106,7 @@ class Game501:
             self.players[self.current_player] = curr_pts
         else:
             self.renderer.warning("Overthrow!")
-        self.current_score = " " * 12
+        self.current_display_score = self.__init_display_score
         self.current_player = (self.current_player + 1) % self.num_players
         self.round.clear()
 
@@ -118,13 +118,13 @@ class Game501:
             modif_score = modif_score[:3] + 'T'
         elif action == input_controller.Action.CONFIRM:
             self.save_points_for_current_throw()
-            modif_score = " " * 4
+            modif_score = "  0 "
             self.round.current_position += 1
             # We have overflown the positions which means that the new round has started
             if self.round.current_position == Position.FIRST:
                 self.next_round()
         elif action == input_controller.Action.UNDO:
-            modif_score = " " * 4
+            modif_score = "  0 "
         assert(len(modif_score) == 4)
         return modif_score
     
@@ -147,13 +147,13 @@ class Game501:
 
     def score_for_current_throw(self):
         curr_pos_int = self.round.current_position.to_int()
-        return self.current_score[ ((curr_pos_int - 1) * 4) : (curr_pos_int * 4) ]
+        return self.current_display_score[ ((curr_pos_int - 1) * 4) : (curr_pos_int * 4) ]
 
     def substitute_score_for_current_throw(self, score):
         if score == None or len(score) != 4:
             raise ValueError("the score string must be of length 4")
         curr_pos_int = self.round.current_position.to_int()
-        self.current_score = self.current_score[:((curr_pos_int - 1) * 4)] + score + self.current_score[(curr_pos_int * 4):]
+        self.current_display_score = self.current_display_score[:((curr_pos_int - 1) * 4)] + score + self.current_display_score[(curr_pos_int * 4):]
 
     def loop(self):
         while not self.over():
@@ -164,7 +164,7 @@ class Game501:
                 return
             if next_event.e_type == input_controller.EventType.NUMBER: 
                 next_digit = str(next_event.value)
-                if match(space * 3 + "[ DT]", score):
+                if match(space * 2 + "0" + "[ DT]", score):
                     appendix = score[3]
                     score = space * 2 + next_digit + appendix
                 elif match(space * 2 + "[0-9][ DT]", score):
@@ -180,7 +180,7 @@ class Game501:
                 score = self.handle_action(next_event.value)
                 self.renderer.action(next_event.value, self.input_ctrl)
             self.substitute_score_for_current_throw(score)
-            self.renderer.score(self.current_score)
+            self.renderer.score(self.current_display_score)
             points = str(self.players[self.current_player])
             if self.num_players > 1:
                 points += " " + str(self.players[(self.current_player + 1) % self.num_players])

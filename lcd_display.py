@@ -50,7 +50,8 @@ class LcdDisplay:
     # To be used with resource cleaning.
     def clean_up(self):
         lcd_byte(0x01, LCD_CMD)
-        self.lcd_string("Goodbye!",LCD_LINE_1)
+        self.lcd_string("",LCD_LINE_1)
+        self.lcd_string("", LCD_LINE_2)
         GPIO.cleanup()
 
     def lcd_init(self):

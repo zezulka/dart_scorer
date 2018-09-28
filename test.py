@@ -41,9 +41,9 @@ class TestGameLogic(unittest.TestCase):
                   Event(EventType.ACTION, Action.CONFIRM)
               ]
         game = game_logic.Game501(1, TestingPoller(evs), TestingRenderer())
-        self.assertEqual(game.current_score, " " * 12)
+        self.assertEqual(game.current_display_score, "  0 " * 3)
         game.loop() 
-        self.assertEqual(game.current_score, " 10 " + " " * 8)
+        self.assertEqual(game.current_display_score, " 10 " + "  0 " * 2)
 
     def test_display_empty_after_one_round(self):
         evs = [
@@ -53,7 +53,7 @@ class TestGameLogic(unittest.TestCase):
               ]
         game = game_logic.Game501(1, TestingPoller(evs * 3), TestingRenderer())
         game.loop()
-        self.assertEqual(game.current_score, " " * 12)
+        self.assertEqual(game.current_display_score, "  0 " * 3)
 
     def test_whole_round(self):
          evs = [
