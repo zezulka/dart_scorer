@@ -75,6 +75,13 @@ class Game501:
 
         def score(self, score):
             self.lcd_d.lcd_string_first_line(score)
+        
+        def highlight_current_throw(self, no):
+            no -= 1
+            no *= 4
+            aux_str = "####" + " " * 8
+            aux_str = aux_str[-no:] + aux_str[:-no]
+            self.lcd_d.lcd_string_second_line(aux_str)        
 
         def warning(self, text):
             self.lcd_d.lcd_string_second_line(text)
@@ -158,6 +165,7 @@ class Game501:
     def loop(self):
         while not self.over():
             space = " "
+            self.renderer.highlight_current_throw(self.round.current_position.to_int())
             next_event = self.input_ctrl.next_event()
             score = self.score_for_current_throw()
             if not next_event:
