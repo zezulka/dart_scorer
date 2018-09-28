@@ -33,6 +33,9 @@ class TestingRenderer:
     def points(self, _):
         pass
 
+    def highlight_current_throw(self, _):
+        pass
+
 class TestGameLogic(unittest.TestCase):
     def test_single_score(self):
         evs = [
