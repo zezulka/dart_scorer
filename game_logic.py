@@ -104,6 +104,8 @@ class Game501:
         curr_pts = self.players[self.current_player] - self.round.points()
         if curr_pts >= 0:
             self.players[self.current_player] = curr_pts
+        else:
+            self.renderer.warning("Overthrow!")
         self.current_score = " " * 12
         self.current_player = (self.current_player + 1) % self.num_players
         self.round.clear()
@@ -154,7 +156,7 @@ class Game501:
         self.current_score = self.current_score[:((curr_pos_int - 1) * 4)] + score + self.current_score[(curr_pos_int * 4):]
 
     def loop(self):
-        while True:
+        while not self.over():
             space = " "
             next_event = self.input_ctrl.next_event()
             score = self.score_for_current_throw()
