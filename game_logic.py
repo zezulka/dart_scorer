@@ -120,10 +120,6 @@ class Renderer:
     def clean_up(self):
         self.lcd_d.clean_up()
 
-    def action(self, action, input_ctrl):
-        if action in [input_controller.Action.DOUBLE, input_controller.Action.TRIPLE]:
-            input_ctrl.toggle_numlock()
-
     def points(self, points):
         self.segment_d.show_message(str(points))
 
@@ -246,6 +242,5 @@ class Game501:
                     self.renderer.warning("hit <-")
             elif next_event.e_type == input_controller.EventType.ACTION:
                 score = self.handle_action(next_event.value)
-                self.renderer.action(next_event.value, self.input_ctrl)
             self.substitute_score_for_current_throw(score)
             self.renderer.score(self.current_display_score)

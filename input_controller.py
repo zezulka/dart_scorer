@@ -53,10 +53,6 @@ class EventPoller:
     def __init__(self):
         self.keyboard = InputDevice(NUM_KEY_PATH)
 
-    def toggle_numlock(self):
-        self.keyboard.write(ecodes.EV_KEY, ecodes.KEY_NUMLOCK, 1)
-        self.keyboard.write(ecodes.EV_KEY, ecodes.KEY_NUMLOCK, 0)
-
     # Should return None when there is no event available at the moment.
     def next_event(self):
         r,w,x = select([self.keyboard], [], [])
