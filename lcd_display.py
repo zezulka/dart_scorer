@@ -47,11 +47,14 @@ class LcdDisplay:
         GPIO.setup(LCD_D7, GPIO.OUT) # DB7
         self.lcd_init()
 
+    def clear(self):
+        self.lcd_string("", LCD_LINE_1)
+        self.lcd_string("", LCD_LINE_2)
+
     # To be used with resource cleaning.
     def clean_up(self):
         lcd_byte(0x01, LCD_CMD)
-        self.lcd_string("",LCD_LINE_1)
-        self.lcd_string("", LCD_LINE_2)
+        self.clear()
         GPIO.cleanup()
 
     def lcd_init(self):

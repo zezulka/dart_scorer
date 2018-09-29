@@ -57,38 +57,93 @@ class GameRound:
     def points(self):
         return self.first_throw.points() + self.second_throw.points() + self.third_throw.points()
 
+def game_factory():
+    renderer = Renderer()
+    user_config = renderer.get_user_config()
+    input_ctrl = input_controller.EventPoller() 
+    if user_config.game_type == GameType.X01:
+        return Game501(user_config.num_players, input_ctrl, renderer)
+    else:
+        raise ValueError("Not supported yet.")
+
+class GameType(Enum):
+    X01 = 1,
+    Cricket = 2,
+    RoundTheClock = 3,
+
+class UserConfig:
+    def __init__(self, num_players, game_type, input_ctrl):
+        if num_players < 1:
+            raise ValueError("There must be at least one player in the game.")
+        if not game_type:
+            raise ValueError("No game selected.")
+        self.num_players = num_players
+        self.game_type = game_type
+
+def game_type_factory(number):
+    if number == 1:
+        return GameType.X01
+    else:
+        raise ValueError("Unsupported game type.")
+
+class Renderer:
+    def __init__(self):
+        self.segment_d = max7219_controller.MAX7219()
+        self.lcd_d = lcd_display.LcdDisplay()
+
+    def get_user_config(self):
+        input_ctrl = input_controller.EventPoller()
+        num_players = -1
+        game_type = None
+        first_line = "no. players:"
+        self.lcd_d.lcd_string_first_line(first_line)
+        while True:
+            e = input_ctrl.next_event()
+            if e.e_type == input_controller.EventType.NUMBER:
+                num_players = e.value
+                first_line += " " + str(num_players)
+                break
+        self.lcd_d.lcd_string_first_line(first_line)
+        second_line = "game type:"
+        self.lcd_d.lcd_string_second_line(second_line)
+        while True:
+            e = input_ctrl.next_event()
+            if e.e_type == input_controller.EventType.NUMBER:
+                game_type = game_type_factory(e.value)
+                second_line += " " + str(game_type.value[0])
+                break
+        self.lcd_d.lcd_string_second_line(second_line)
+        sleep(0.50)
+        self.lcd_d.clear()
+        return UserConfig(num_players, game_type, input_ctrl)    
+
+    def clean_up(self):
+        self.lcd_d.clean_up()
+
+    def action(self, action, input_ctrl):
+        if action in [input_controller.Action.DOUBLE, input_controller.Action.TRIPLE]:
+            input_ctrl.toggle_numlock()
+
+    def points(self, points):
+        self.segment_d.show_message(str(points))
+
+    def score(self, score):
+        self.lcd_d.lcd_string_first_line(score)
+    
+    def highlight_current_throw(self, no):
+        no -= 1
+        no *= 4
+        aux_str = "####" + " " * 8
+        aux_str = aux_str[-no:] + aux_str[:-no]
+        self.lcd_d.lcd_string_second_line(aux_str)        
+
+    def warning(self, text):
+        self.lcd_d.lcd_string_second_line(text)
+        sleep(0.75)
+        self.lcd_d.lcd_string_second_line("")
+
 class Game501:
-    class Renderer:
-        def __init__(self):
-            self.segment_d = max7219_controller.MAX7219()
-            self.lcd_d = lcd_display.LcdDisplay()
-
-        def clean_up(self):
-            self.lcd_d.clean_up()
-
-        def action(self, action, input_ctrl):
-            if action in [input_controller.Action.DOUBLE, input_controller.Action.TRIPLE]:
-                input_ctrl.toggle_numlock()
-
-        def points(self, points):
-            self.segment_d.show_message(str(points))
-
-        def score(self, score):
-            self.lcd_d.lcd_string_first_line(score)
-        
-        def highlight_current_throw(self, no):
-            no -= 1
-            no *= 4
-            aux_str = "####" + " " * 8
-            aux_str = aux_str[-no:] + aux_str[:-no]
-            self.lcd_d.lcd_string_second_line(aux_str)        
-
-        def warning(self, text):
-            self.lcd_d.lcd_string_second_line(text)
-            sleep(0.75)
-            self.lcd_d.lcd_string_second_line("")
-
-    def __init__(self, num_players, input_ctrl, renderer=Renderer()):
+    def __init__(self, num_players, input_ctrl, renderer):
         self.round = GameRound()
         self.input_ctrl = input_ctrl
         self.renderer = renderer
@@ -164,6 +219,11 @@ class Game501:
 
     def loop(self):
         while not self.over():
+            self.renderer.score(self.current_display_score)
+            points = str(self.players[self.current_player])
+            self.renderer.points(points)
+            if self.num_players > 1:
+               points += " " + str(self.players[(self.current_player + 1) % self.num_players])           
             space = " "
             self.renderer.highlight_current_throw(self.round.current_position.to_int())
             next_event = self.input_ctrl.next_event()
@@ -189,7 +249,3 @@ class Game501:
                 self.renderer.action(next_event.value, self.input_ctrl)
             self.substitute_score_for_current_throw(score)
             self.renderer.score(self.current_display_score)
-            points = str(self.players[self.current_player])
-            if self.num_players > 1:
-                points += " " + str(self.players[(self.current_player + 1) % self.num_players])
-            self.renderer.points(points)
