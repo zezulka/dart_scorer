@@ -167,24 +167,6 @@ class Game501:
         self.current_display_score = self.__init_display_score
         self.current_player = (self.current_player + 1) % self.num_players
         self.round.clear()
-
-    def handle_action(self, action):
-        modif_score = self.score_for_current_throw()
-        if action == input_controller.Action.DOUBLE:
-            modif_score = modif_score[:3] + 'D'
-        elif action == input_controller.Action.TRIPLE:
-            modif_score = modif_score[:3] + 'T'
-        elif action == input_controller.Action.CONFIRM:
-            self.save_points_for_current_throw()
-            modif_score = "  0 "
-            self.round.current_position += 1
-            # We have overflown the positions which means that the new round has started
-            if self.round.current_position == Position.FIRST:
-                self.next_round()
-        elif action == input_controller.Action.UNDO:
-            modif_score = "  0 "
-        assert(len(modif_score) == 4)
-        return modif_score
     
     def save_points_for_current_throw(self):
         curr_score = self.score_for_current_throw()
@@ -213,34 +195,63 @@ class Game501:
         curr_pos_int = self.round.current_position.to_int()
         self.current_display_score = self.current_display_score[:((curr_pos_int - 1) * 4)] + score + self.current_display_score[(curr_pos_int * 4):]
 
+    def score_after_action(self, action):
+        modif_score = self.score_for_current_throw()
+        if action == input_controller.Action.DOUBLE:
+            modif_score = modif_score[:3] + 'D'
+        elif action == input_controller.Action.TRIPLE:
+            modif_score = modif_score[:3] + 'T'
+        elif action == input_controller.Action.CONFIRM:
+            self.save_points_for_current_throw()
+            modif_score = "  0 "
+            self.round.current_position += 1
+            # We have overflown the positions which means that the new round has started
+            if self.round.current_position == Position.FIRST:
+                self.next_round()
+        elif action == input_controller.Action.UNDO:
+            modif_score = "  0 "
+        assert(len(modif_score) == 4)
+        return modif_score
+
+    def score_after_digit(self, digit):
+        space = " "
+        digit = str(digit)
+        score = self.score_for_current_throw()
+        if match(space * 2 + "0" + "[ DT]", score):
+            appendix = score[3]
+            score = space * 2 + digit + appendix
+        elif match(space * 2 + "[0-9][ DT]", score):
+            tens = score[2]
+            appendix = score[3]
+            if tens == "1" or (tens == "2" and digit in ["0", "5"]):
+                score = space + tens + digit + appendix
+            else:
+                self.renderer.warning(tens + digit + " not valid!")
+        else:
+            self.renderer.warning("hit <-")
+        return score
+
+    def points_string_segment_display(self):
+        points = str(self.players[self.current_player])
+        if self.num_players > 1:
+           points += " " + str(self.players[(self.current_player + 1) % self.num_players])
+        return points
+
     def loop(self):
-        while not self.over():
-            self.renderer.score(self.current_display_score)
-            points = str(self.players[self.current_player])
-            self.renderer.points(points)
-            if self.num_players > 1:
-               points += " " + str(self.players[(self.current_player + 1) % self.num_players])           
-            space = " "
+        while not self.over():           
             self.renderer.highlight_current_throw(self.round.current_position.to_int())
+            self.renderer.score(self.current_display_score) 
+            self.renderer.points(self.points_string_segment_display())
             next_event = self.input_ctrl.next_event()
-            score = self.score_for_current_throw()
             if not next_event:
                 return
+            after_fun = None
             if next_event.e_type == input_controller.EventType.NUMBER: 
-                next_digit = str(next_event.value)
-                if match(space * 2 + "0" + "[ DT]", score):
-                    appendix = score[3]
-                    score = space * 2 + next_digit + appendix
-                elif match(space * 2 + "[0-9][ DT]", score):
-                    tens = score[2]
-                    appendix = score[3]
-                    if tens == "1" or (tens == "2" and next_digit in ["0", "5"]):
-                        score = space + tens + next_digit + appendix
-                    else:
-                        self.renderer.warning(tens + next_digit + " not valid!")
-                else:
-                    self.renderer.warning("hit <-")
+                after_fun = self.score_after_digit
             elif next_event.e_type == input_controller.EventType.ACTION:
-                score = self.handle_action(next_event.value)
-            self.substitute_score_for_current_throw(score)
-            self.renderer.score(self.current_display_score)
+                after_fun = self.score_after_action
+            elif next_event.e_type == input_controller.EventType.NOTHING:
+                continue
+            else:
+                raise ValueError("Unexpected event occurred.")
+            self.substitute_score_for_current_throw(after_fun(next_event.value))
