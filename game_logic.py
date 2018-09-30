@@ -124,7 +124,6 @@ class Renderer:
             e = input_ctrl.next_event()
             if e.e_type == input_controller.EventType.NUMBER:
                 return e.value
-                
 
     def get_user_config(self):
         input_ctrl = input_controller.EventPoller()
@@ -233,6 +232,7 @@ class Game501:
         curr_pos_int = self.round.current_position.to_int()
         self.renderer.substitute_score_on_position(score, curr_pos_int)
 
+    # TODO: there is too much going on in one method...
     def score_after_action(self, action):
         modif_score = self.score_for_current_throw()
         if action == input_controller.Action.DOUBLE:
@@ -294,4 +294,5 @@ class Game501:
                 continue
             else:
                 raise ValueError("Unexpected event occurred.")
+            print(next_event.value)
             self.substitute_score_at_current_throw(after_fun(next_event.value))
