@@ -3,6 +3,27 @@ import unittest
 import game_logic
 from queue import Queue
 from input_controller import *
+from game_logic import Renderer
+
+# In testing, this should be no-op since
+# the real implementation only directly controls
+# displays.
+# TODO: might add debug messages instead of only calling 'pass'es.
+class TestingDisplayController:
+    def __init__(self):
+        pass     
+
+    def segment_set_text(self, text):
+        pass
+
+    def lcd_set_first_line(self, text):
+        pass
+
+    def lcd_set_second_line(self, text):
+        pass
+
+    def clean_up(self):
+        pass
 
 class TestingPoller:
     def __init__(self, event_array):
@@ -19,22 +40,8 @@ class TestingPoller:
             return None
         return self.event_queue.get()
 
-# Just a noop implementation
-class TestingRenderer:
-    def action(_self, _, __):
-        pass
-
-    def score(_self, _):
-        pass
-
-    def warning(_self, _):
-        pass
-
-    def points(self, _):
-        pass
-
-    def highlight_current_throw(self, _):
-        pass
+def testing_renderer():
+    return Renderer(TestingDisplayController())
 
 class TestGameLogic(unittest.TestCase):
     def test_single_score(self):
@@ -43,10 +50,11 @@ class TestGameLogic(unittest.TestCase):
                   Event(EventType.NUMBER, 0),
                   Event(EventType.ACTION, Action.CONFIRM)
               ]
-        game = game_logic.Game501(1, TestingPoller(evs), TestingRenderer())
-        self.assertEqual(game.current_display_score, "  0 " * 3)
-        game.loop() 
-        self.assertEqual(game.current_display_score, " 10 " + "  0 " * 2)
+        game = game_logic.Game501(1, TestingPoller(evs), testing_renderer())
+        self.assertEqual(game.players[0], 501)
+        game.loop()
+        # Points are ONLY subtracted iff the round is over.
+        self.assertEqual(game.players[0], 501)
 
     def test_display_empty_after_one_round(self):
         evs = [
@@ -54,9 +62,9 @@ class TestGameLogic(unittest.TestCase):
                   Event(EventType.NUMBER, 0),
                   Event(EventType.ACTION, Action.CONFIRM)
               ]
-        game = game_logic.Game501(1, TestingPoller(evs * 3), TestingRenderer())
+        game = game_logic.Game501(1, TestingPoller(evs * 3), testing_renderer())
         game.loop()
-        self.assertEqual(game.current_display_score, "  0 " * 3)
+        self.assertEqual(game.renderer.current_display_score, " 10 " + "  0 " * 2)
 
     def test_whole_round(self):
          evs = [
@@ -64,7 +72,7 @@ class TestGameLogic(unittest.TestCase):
                    Event(EventType.NUMBER, 0),
                    Event(EventType.ACTION, Action.CONFIRM),
                ]
-         game = game_logic.Game501(1, TestingPoller(evs * 3), TestingRenderer())
+         game = game_logic.Game501(1, TestingPoller(evs * 3), testing_renderer())
          self.assertEqual(game.players[0], 501)
          game.loop()
          self.assertEqual(game.players[0], 471)
@@ -75,7 +83,7 @@ class TestGameLogic(unittest.TestCase):
                    Event(EventType.NUMBER, 0),
                    Event(EventType.ACTION, Action.CONFIRM),
                ]
-         game = game_logic.Game501(1, TestingPoller(evs * 6), TestingRenderer())
+         game = game_logic.Game501(1, TestingPoller(evs * 6), testing_renderer())
          self.assertEqual(game.players[0], 501)
          game.loop()
          self.assertEqual(game.players[0], 441)
@@ -107,7 +115,7 @@ class TestGameLogic(unittest.TestCase):
                    Event(EventType.ACTION, Action.DOUBLE),
                    Event(EventType.ACTION, Action.CONFIRM)
                 ]
-         game = game_logic.Game501(1, TestingPoller(evs), TestingRenderer())
+         game = game_logic.Game501(1, TestingPoller(evs), testing_renderer())
          self.assertEqual(game.players[0], 501)
          game.loop()
          self.assertEqual(game.players[0], 0)
@@ -120,7 +128,7 @@ class TestGameLogic(unittest.TestCase):
                    Event(EventType.ACTION, Action.TRIPLE),
                    Event(EventType.ACTION, Action.CONFIRM)
                ] * 9
-         game = game_logic.Game501(1, TestingPoller(evs), TestingRenderer())
+         game = game_logic.Game501(1, TestingPoller(evs), testing_renderer())
          self.assertEqual(game.players[0], 501)
          game.loop()
          # 501 - 360

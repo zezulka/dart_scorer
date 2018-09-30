@@ -55,7 +55,10 @@ class GameRound:
         self.__init__()
     
     def points(self):
-        return self.first_throw.points() + self.second_throw.points() + self.third_throw.points()
+        return reduce(lambda acc, next_: acc + next_.points(), 
+                      filter(lambda throw : throw is not None, 
+                             [self.first_throw, self.second_throw, self.third_throw]), 
+                      0)
 
 def game_factory():
     renderer = Renderer()
@@ -86,65 +89,94 @@ def game_type_factory(number):
     else:
         raise ValueError("Unsupported game type.")
 
-class Renderer:
+class DisplayController:
     def __init__(self):
         self.segment_d = max7219_controller.MAX7219()
         self.lcd_d = lcd_display.LcdDisplay()
+
+    def segment_set_text(self, text):
+        self.segment_d.show_message(text)
+
+    def lcd_set_first_line(self, text):
+        self.lcd_d.first_line(text)
+
+    def lcd_set_second_line(self, text):
+        self.lcd_d.second_line(text)
+
+    def clean_up(self):
+        self.lcd_d.clean_up()
+        self.segment_d.clean_up()
+
+class Renderer:
+    def __init__(self, displ_ctrl = DisplayController()):
+        self.__init_display_score = "  0 " * 3
+        self.current_display_score = self.__init_display_score
+        self.displ_ctrl = displ_ctrl
 
     def get_user_config(self):
         input_ctrl = input_controller.EventPoller()
         num_players = -1
         game_type = None
         first_line = "no. players:"
-        self.lcd_d.lcd_string_first_line(first_line)
+        self.displ_ctrl.lcd_set_first_line(first_line)
         while True:
             e = input_ctrl.next_event()
             if e.e_type == input_controller.EventType.NUMBER:
                 num_players = e.value
                 first_line += " " + str(num_players)
                 break
-        self.lcd_d.lcd_string_first_line(first_line)
+        self.displ_ctrl.lcd_set_first_line(first_line)
         second_line = "game type:"
-        self.lcd_d.lcd_string_second_line(second_line)
+        self.displ_ctrl.lcd_set_second_line(second_line)
         while True:
             e = input_ctrl.next_event()
             if e.e_type == input_controller.EventType.NUMBER:
                 game_type = game_type_factory(e.value)
                 second_line += " " + str(game_type.value[0])
                 break
-        self.lcd_d.lcd_string_second_line(second_line)
+        self.displ_ctrl.lcd_set_second_line(second_line)
         sleep(0.50)
-        self.lcd_d.clear()
+        self.clear_lcd()
         return UserConfig(num_players, game_type, input_ctrl)    
 
+    def clear_lcd(self):
+        self.current_display_score = self.__init_display_score        
+
     def clean_up(self):
-        self.lcd_d.clean_up()
+        self.displ_ctrl.clean_up()
 
     def points(self, points):
-        self.segment_d.show_message(str(points))
+        self.displ_ctrl.segment_set_text(str(points))
 
-    def score(self, score):
-        self.lcd_d.lcd_string_first_line(score)
-    
+    def score(self):
+        self.displ_ctrl.lcd_set_first_line(self.current_display_score)
+   
+    def subscore_for_throw(self, pos):
+        return self.current_display_score[ ((pos - 1) * 4) : (pos * 4) ]
+ 
+    def substitute_score_on_position(self, score, pos):
+        if score == None or len(score) != 4:
+            raise ValueError("the score string must be of length 4")
+        self.current_display_score = self.current_display_score[:((pos - 1) * 4)] + score + \
+                                     self.current_display_score[(pos * 4):]
+
     def highlight_current_throw(self, no):
         no -= 1
         no *= 4
         aux_str = "####" + " " * 8
         aux_str = aux_str[-no:] + aux_str[:-no]
-        self.lcd_d.lcd_string_second_line(aux_str)        
+        self.displ_ctrl.lcd_set_second_line(aux_str)        
 
     def warning(self, text):
-        self.lcd_d.lcd_string_second_line(text)
+        self.displ_ctrl.lcd_set_second_line(text)
         sleep(0.75)
-        self.lcd_d.lcd_string_second_line("")
+        self.displ_ctrl.lcd_set_second_line("")
 
 class Game501:
     def __init__(self, num_players, input_ctrl, renderer):
         self.round = GameRound()
         self.input_ctrl = input_ctrl
         self.renderer = renderer
-        self.__init_display_score = "  0 " * 3
-        self.current_display_score = self.__init_display_score
         self.current_player = 0
         self.num_players = num_players
         self.players = [501] * num_players
@@ -164,10 +196,12 @@ class Game501:
             self.players[self.current_player] = curr_pts
         else:
             self.renderer.warning("Overthrow!")
-        self.current_display_score = self.__init_display_score
+        self.renderer.clear_lcd()
         self.current_player = (self.current_player + 1) % self.num_players
         self.round.clear()
     
+    # TODO: the parsing is really weird, we should get the information
+    # from somewhere else
     def save_points_for_current_throw(self):
         curr_score = self.score_for_current_throw()
         int_score = int(curr_score[1] + curr_score[2])
@@ -187,13 +221,13 @@ class Game501:
 
     def score_for_current_throw(self):
         curr_pos_int = self.round.current_position.to_int()
-        return self.current_display_score[ ((curr_pos_int - 1) * 4) : (curr_pos_int * 4) ]
+        return self.renderer.subscore_for_throw(curr_pos_int)
 
-    def substitute_score_for_current_throw(self, score):
+    def substitute_score_at_current_throw(self, score):
         if score == None or len(score) != 4:
             raise ValueError("the score string must be of length 4")
         curr_pos_int = self.round.current_position.to_int()
-        self.current_display_score = self.current_display_score[:((curr_pos_int - 1) * 4)] + score + self.current_display_score[(curr_pos_int * 4):]
+        self.renderer.substitute_score_on_position(score, curr_pos_int)
 
     def score_after_action(self, action):
         modif_score = self.score_for_current_throw()
@@ -203,10 +237,12 @@ class Game501:
             modif_score = modif_score[:3] + 'T'
         elif action == input_controller.Action.CONFIRM:
             self.save_points_for_current_throw()
-            modif_score = "  0 "
+            curr_pts = curr_pts = self.players[self.current_player] - self.round.points()
+            if curr_pts < 0:
+                self.renderer.warning("Overthrow!")
             self.round.current_position += 1
-            # We have overflown the positions which means that the new round has started
-            if self.round.current_position == Position.FIRST:
+            modif_score = self.score_for_current_throw()
+            if self.round.current_position == Position.FIRST or curr_pts < 0:
                 self.next_round()
         elif action == input_controller.Action.UNDO:
             modif_score = "  0 "
@@ -231,8 +267,8 @@ class Game501:
             self.renderer.warning("hit <-")
         return score
 
-    def points_string_segment_display(self):
-        points = str(self.players[self.current_player])
+    def points_to_segment_display_string(self):
+        points = str(self.players[self.current_player] - self.round.points())
         if self.num_players > 1:
            points += " " + str(self.players[(self.current_player + 1) % self.num_players])
         return points
@@ -240,8 +276,8 @@ class Game501:
     def loop(self):
         while not self.over():           
             self.renderer.highlight_current_throw(self.round.current_position.to_int())
-            self.renderer.score(self.current_display_score) 
-            self.renderer.points(self.points_string_segment_display())
+            self.renderer.score() 
+            self.renderer.points(self.points_to_segment_display_string())
             next_event = self.input_ctrl.next_event()
             if not next_event:
                 return
@@ -254,4 +290,4 @@ class Game501:
                 continue
             else:
                 raise ValueError("Unexpected event occurred.")
-            self.substitute_score_for_current_throw(after_fun(next_event.value))
+            self.substitute_score_at_current_throw(after_fun(next_event.value))

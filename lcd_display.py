@@ -73,10 +73,10 @@ class LcdDisplay:
         for i in range(LCD_WIDTH):
             lcd_byte(ord(message[i]),LCD_CHR)
 
-    def lcd_string_first_line(self, message):
+    def first_line(self, message):
         self.lcd_string(message, LCD_LINE_1)
 
-    def lcd_string_second_line(self, message):
+    def second_line(self, message):
         self.lcd_string(message, LCD_LINE_2)
 
 # And now... a bit of magic!
