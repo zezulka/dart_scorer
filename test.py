@@ -9,17 +9,18 @@ from game_logic import Renderer
 # the real implementation only directly controls
 # displays.
 # TODO: might add debug messages instead of only calling 'pass'es.
+
 class TestingDisplayController:
     def __init__(self):
         pass     
 
-    def segment_set_text(self, text):
+    def segment_set_text(self, _):
         pass
 
-    def lcd_set_first_line(self, text):
+    def lcd_set_first_line(self, _, _d = None):
         pass
 
-    def lcd_set_second_line(self, text):
+    def lcd_set_second_line(self, _, _d = None):
         pass
 
     def clean_up(self):
@@ -64,7 +65,7 @@ class TestGameLogic(unittest.TestCase):
               ]
         game = game_logic.Game501(1, TestingPoller(evs * 3), testing_renderer())
         game.loop()
-        self.assertEqual(game.renderer.current_display_score, " 10 " + "  0 " * 2)
+        self.assertEqual(game.renderer.current_display_score, "  0 " * 3)
 
     def test_whole_round(self):
          evs = [
@@ -76,6 +77,7 @@ class TestGameLogic(unittest.TestCase):
          self.assertEqual(game.players[0], 501)
          game.loop()
          self.assertEqual(game.players[0], 471)
+         self.assertEqual(game.renderer.current_display_score, "  0 " * 3)
 
     def test_two_rounds(self):
          evs = [
@@ -88,7 +90,7 @@ class TestGameLogic(unittest.TestCase):
          game.loop()
          self.assertEqual(game.players[0], 441)
      
-    def test_game(self):
+    def test_game_nine_finisher(self):
          evs = [
                    Event(EventType.NUMBER, 2),
                    Event(EventType.NUMBER, 0),
@@ -121,7 +123,80 @@ class TestGameLogic(unittest.TestCase):
          self.assertEqual(game.players[0], 0)
          self.assertTrue(game.over())
 
-    def test_overthrow(self):
+    def test_game_ten_finisher(self):
+         evs = [
+                   Event(EventType.NUMBER, 2),
+                   Event(EventType.NUMBER, 0),
+                   Event(EventType.ACTION, Action.TRIPLE),
+                   Event(EventType.ACTION, Action.CONFIRM)
+               ]
+         evs = evs * 6
+         evs += [
+                   Event(EventType.NUMBER, 2),
+                   Event(EventType.NUMBER, 0),
+                   Event(EventType.ACTION, Action.TRIPLE),
+                   Event(EventType.ACTION, Action.CONFIRM)
+                ]
+
+         evs += [
+                   Event(EventType.NUMBER, 1),
+                   Event(EventType.NUMBER, 9),
+                   Event(EventType.ACTION, Action.TRIPLE),
+                   Event(EventType.ACTION, Action.CONFIRM)
+                ]
+         # Player misses the board
+         evs += [  Event(EventType.ACTION, Action.CONFIRM) ]
+         evs += [
+                   Event(EventType.NUMBER, 1),
+                   Event(EventType.NUMBER, 2),
+                   Event(EventType.ACTION, Action.DOUBLE),
+                   Event(EventType.ACTION, Action.CONFIRM)
+                ]
+         game = game_logic.Game501(1, TestingPoller(evs), testing_renderer())
+         self.assertEqual(game.players[0], 501)
+         game.loop()
+         self.assertEqual(game.players[0], 0)
+         self.assertTrue(game.over())
+
+    def test_game_eleven_finisher(self):
+         evs = [
+                   Event(EventType.NUMBER, 2),
+                   Event(EventType.NUMBER, 0),
+                   Event(EventType.ACTION, Action.TRIPLE),
+                   Event(EventType.ACTION, Action.CONFIRM)
+               ]
+         evs = evs * 6
+         evs += [
+                   Event(EventType.NUMBER, 2),
+                   Event(EventType.NUMBER, 0),
+                   Event(EventType.ACTION, Action.TRIPLE),
+                   Event(EventType.ACTION, Action.CONFIRM)
+                ]
+
+         evs += [
+                   Event(EventType.NUMBER, 1),
+                   Event(EventType.NUMBER, 9),
+                   Event(EventType.ACTION, Action.TRIPLE),
+                   Event(EventType.ACTION, Action.CONFIRM)
+                ]
+         # Player misses the board twice
+         evs += [  
+                   Event(EventType.ACTION, Action.CONFIRM),
+                   Event(EventType.ACTION, Action.CONFIRM)
+                ]
+         evs += [
+                   Event(EventType.NUMBER, 1),
+                   Event(EventType.NUMBER, 2),
+                   Event(EventType.ACTION, Action.DOUBLE),
+                   Event(EventType.ACTION, Action.CONFIRM)
+                ]
+         game = game_logic.Game501(1, TestingPoller(evs), testing_renderer())
+         self.assertEqual(game.players[0], 501)
+         game.loop()
+         self.assertEqual(game.players[0], 0)
+         self.assertTrue(game.over())
+
+    def test_overthrow_after_ninth(self):
          evs = [
                    Event(EventType.NUMBER, 2),
                    Event(EventType.NUMBER, 0),
@@ -131,9 +206,48 @@ class TestGameLogic(unittest.TestCase):
          game = game_logic.Game501(1, TestingPoller(evs), testing_renderer())
          self.assertEqual(game.players[0], 501)
          game.loop()
-         # 501 - 360
-         self.assertEqual(game.players[0], 141)
+         self.assertEqual(game.players[0], 501 - 3 * 20 * 6)
          self.assertFalse(game.over())
+
+    def test_overthrow_after_tenth(self):
+         evs = [
+                   Event(EventType.NUMBER, 1),
+                   Event(EventType.NUMBER, 8),
+                   Event(EventType.ACTION, Action.TRIPLE),
+                   Event(EventType.ACTION, Action.CONFIRM)
+               ]
+         evs = evs * 9
+         evs += [
+                   Event(EventType.NUMBER, 1),
+                   Event(EventType.NUMBER, 6),
+                   Event(EventType.ACTION, Action.CONFIRM)
+                ]
+         game = game_logic.Game501(1, TestingPoller(evs), testing_renderer())
+         self.assertEqual(game.players[0], 501)
+         game.loop()
+         self.assertEqual(game.players[0], 501 - 3 * 18 * 9)
+
+    def test_overthrow_after_eleventh(self):
+         evs = [
+                   Event(EventType.NUMBER, 1),
+                   Event(EventType.NUMBER, 8),
+                   Event(EventType.ACTION, Action.TRIPLE),
+                   Event(EventType.ACTION, Action.CONFIRM)
+               ]
+         evs = evs * 9
+         evs += [
+                   Event(EventType.NUMBER, 1),
+                   Event(EventType.NUMBER, 4),
+                   Event(EventType.ACTION, Action.CONFIRM)
+                ]
+         evs += [
+                   Event(EventType.NUMBER, 2),
+                   Event(EventType.ACTION, Action.CONFIRM)
+                ]
+         game = game_logic.Game501(1, TestingPoller(evs), testing_renderer())
+         self.assertEqual(game.players[0], 501)
+         game.loop()
+         self.assertEqual(game.players[0], 501 - 3 * 18 * 9)
 
 class TestPosition(unittest.TestCase):
     def test_add(self):

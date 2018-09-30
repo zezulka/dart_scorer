@@ -97,11 +97,17 @@ class DisplayController:
     def segment_set_text(self, text):
         self.segment_d.show_message(text)
 
-    def lcd_set_first_line(self, text):
-        self.lcd_d.first_line(text)
+    def lcd_set_line(self, set_fun, text, duration):
+        set_fun(text)
+        if duration > 0:
+            sleep(duration)
+            set_fun("")
 
-    def lcd_set_second_line(self, text):
-        self.lcd_d.second_line(text)
+    def lcd_set_first_line(self, text, duration=-1.0):
+        self.lcd_set_line(self.lcd_d.first_line, text, duration)
+
+    def lcd_set_second_line(self, text, duration=-1.0):
+        self.lcd_set_line(self.lcd_d.second_line, text, duration)
 
     def clean_up(self):
         self.lcd_d.clean_up()
@@ -140,7 +146,8 @@ class Renderer:
         return UserConfig(num_players, game_type, input_ctrl)    
 
     def clear_lcd(self):
-        self.current_display_score = self.__init_display_score        
+        self.current_display_score = self.__init_display_score
+        self.score()
 
     def clean_up(self):
         self.displ_ctrl.clean_up()
@@ -168,9 +175,8 @@ class Renderer:
         self.displ_ctrl.lcd_set_second_line(aux_str)        
 
     def warning(self, text):
-        self.displ_ctrl.lcd_set_second_line(text)
-        sleep(0.75)
-        self.displ_ctrl.lcd_set_second_line("")
+        warning_duration = 0.75
+        self.displ_ctrl.lcd_set_second_line(text, warning_duration)
 
 class Game501:
     def __init__(self, num_players, input_ctrl, renderer):
@@ -194,8 +200,6 @@ class Game501:
         curr_pts = self.players[self.current_player] - self.round.points()
         if curr_pts >= 0:
             self.players[self.current_player] = curr_pts
-        else:
-            self.renderer.warning("Overthrow!")
         self.renderer.clear_lcd()
         self.current_player = (self.current_player + 1) % self.num_players
         self.round.clear()
@@ -241,9 +245,9 @@ class Game501:
             if curr_pts < 0:
                 self.renderer.warning("Overthrow!")
             self.round.current_position += 1
-            modif_score = self.score_for_current_throw()
-            if self.round.current_position == Position.FIRST or curr_pts < 0:
+            if self.round.current_position == Position.FIRST or curr_pts <= 0:
                 self.next_round()
+            modif_score = self.score_for_current_throw()
         elif action == input_controller.Action.UNDO:
             modif_score = "  0 "
         assert(len(modif_score) == 4)
