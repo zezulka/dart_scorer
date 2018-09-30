@@ -14,3 +14,5 @@ class MAX7219:
     def show_message(self, text):
         self.seg.text = text
 
+    def clean_up(self):
+        self.device.contrast(0x7F)
