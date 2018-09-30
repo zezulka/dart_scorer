@@ -249,6 +249,42 @@ class TestGameLogic(unittest.TestCase):
          game.loop()
          self.assertEqual(game.players[0], 501 - 3 * 18 * 9)
 
+    def test_triple_bulls_eye(self):
+         evs =  [
+                   Event(EventType.NUMBER, 2),
+                   Event(EventType.NUMBER, 5),
+                   Event(EventType.ACTION, Action.TRIPLE),
+                   Event(EventType.ACTION, Action.CONFIRM)
+                ]
+         evs +=  [
+                   Event(EventType.ACTION, Action.CONFIRM),
+                   Event(EventType.ACTION, Action.CONFIRM)
+                ]
+         game = game_logic.Game501(1, TestingPoller(evs), testing_renderer())
+         self.assertEqual(game.players[0], 501)
+         game.loop()
+         # Note: the first throw will be "25" since the intermediate result is not erased
+         # so, the sequence goes like this: "2" -> "25" -> "25" (with the error message of "25T" of not being valid)
+         self.assertEqual(game.players[0], 476)
+
+    def test_triple_bulls_eye_second_corner_case(self):
+         evs =  [
+                   Event(EventType.ACTION, Action.TRIPLE),
+                   Event(EventType.NUMBER, 2),
+                   Event(EventType.NUMBER, 5),
+                   Event(EventType.ACTION, Action.CONFIRM)
+                ]
+         evs +=  [
+                   Event(EventType.ACTION, Action.CONFIRM),
+                   Event(EventType.ACTION, Action.CONFIRM)
+                ]
+         game = game_logic.Game501(1, TestingPoller(evs), testing_renderer())
+         self.assertEqual(game.players[0], 501)
+         game.loop()
+         # Note: the first throw will be "2" since the intermediate result is not erased
+         # so, the sequence goes like this: "T" -> "2T" -> "2T" (with the error message of "25T" of not being valid)
+         self.assertEqual(game.players[0], 495)
+
 class TestPosition(unittest.TestCase):
     def test_add(self):
         second = game_logic.Position.FIRST

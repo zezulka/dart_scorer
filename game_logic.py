@@ -238,7 +238,11 @@ class Game501:
         if action == input_controller.Action.DOUBLE:
             modif_score = modif_score[:3] + 'D'
         elif action == input_controller.Action.TRIPLE:
-            modif_score = modif_score[:3] + 'T'
+            prefix = modif_score[:3]
+            if prefix != " 25":
+                modif_score = prefix + 'T'
+            else:
+                self.renderer.warning("25T not valid!")
         elif action == input_controller.Action.CONFIRM:
             self.save_points_for_current_throw()
             curr_pts = curr_pts = self.players[self.current_player] - self.round.points()
@@ -264,9 +268,11 @@ class Game501:
             tens = score[2]
             appendix = score[3]
             if tens == "1" or (tens == "2" and digit in ["0", "5"]):
-                score = space + tens + digit + appendix
-            else:
-                self.renderer.warning(tens + digit + " not valid!")
+                aux = space + tens + digit + appendix
+                if aux != " 25T":
+                    score = aux
+                else:
+                    self.renderer.warning(tens + digit + " not valid!")
         else:
             self.renderer.warning("hit <-")
         return score
@@ -294,5 +300,4 @@ class Game501:
                 continue
             else:
                 raise ValueError("Unexpected event occurred.")
-            print(next_event.value)
             self.substitute_score_at_current_throw(after_fun(next_event.value))
