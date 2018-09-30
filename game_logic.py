@@ -119,29 +119,29 @@ class Renderer:
         self.current_display_score = self.__init_display_score
         self.displ_ctrl = displ_ctrl
 
+    def wait_for_next_number(self, input_ctrl):
+        while True:
+            e = input_ctrl.next_event()
+            if e.e_type == input_controller.EventType.NUMBER:
+                return e.value
+                
+
     def get_user_config(self):
         input_ctrl = input_controller.EventPoller()
         num_players = -1
         game_type = None
         first_line = "no. players:"
         self.displ_ctrl.lcd_set_first_line(first_line)
-        while True:
-            e = input_ctrl.next_event()
-            if e.e_type == input_controller.EventType.NUMBER:
-                num_players = e.value
-                first_line += " " + str(num_players)
-                break
+        num_players = self.wait_for_next_number(input_ctrl)
+        first_line += " " + str(num_players)
         self.displ_ctrl.lcd_set_first_line(first_line)
+        
         second_line = "game type:"
         self.displ_ctrl.lcd_set_second_line(second_line)
-        while True:
-            e = input_ctrl.next_event()
-            if e.e_type == input_controller.EventType.NUMBER:
-                game_type = game_type_factory(e.value)
-                second_line += " " + str(game_type.value[0])
-                break
-        self.displ_ctrl.lcd_set_second_line(second_line)
-        sleep(0.50)
+        game_id = self.wait_for_next_number(input_ctrl)
+        game_type = game_type_factory(game_id)
+        second_line += " " + game_type.name
+        self.displ_ctrl.lcd_set_second_line(second_line, 0.50)
         self.clear_lcd()
         return UserConfig(num_players, game_type, input_ctrl)    
 
