@@ -278,9 +278,17 @@ class Game501:
         return score
 
     def points_to_segment_display_string(self):
-        points = str(self.players[self.current_player] - self.round.points())
-        if self.num_players > 1:
-           points += " " + str(self.players[(self.current_player + 1) % self.num_players])
+        if self.num_players == 1:
+            return str(self.players[self.current_player] - self.round.points())
+        points = ""
+        if (self.current_player % 2 == 0):
+            points += str(self.players[self.current_player] - self.round.points())
+            next_player_pos = self.current_player + 1
+            if next_player_pos != self.num_players:
+                points += " " + str(self.players[next_player_pos])
+        else:
+            points += str(self.players[self.current_player - 1]) + " "
+            points += str(self.players[self.current_player] - self.round.points())
         return points
 
     def loop(self):
