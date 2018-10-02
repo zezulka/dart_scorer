@@ -61,7 +61,7 @@ class GameRound:
                       0)
 
 def game_factory():
-    renderer = Renderer()
+    renderer = Renderer(DisplayController())
     user_config = renderer.get_user_config()
     input_ctrl = input_controller.EventPoller() 
     if user_config.game_type == GameType.X01:
@@ -114,7 +114,7 @@ class DisplayController:
         self.segment_d.clean_up()
 
 class Renderer:
-    def __init__(self, displ_ctrl = DisplayController()):
+    def __init__(self, displ_ctrl):
         self.__init_display_score = "  0 " * 3
         self.current_display_score = self.__init_display_score
         self.displ_ctrl = displ_ctrl
@@ -185,12 +185,13 @@ class Game501:
         self.current_player = 0
         self.num_players = num_players
         self.players = [501] * num_players
+        self.force_quit = False
 
     def __enter__(self):
         return self
  
     def over(self):
-        return reduce(lambda x,y: x or y == 0, self.players, False)
+        return self.force_quit or reduce(lambda x,y: x or y == 0, self.players, False)
 
     def __exit__(self, _type, _value, _tb):
         self.renderer.clean_up()
@@ -254,6 +255,8 @@ class Game501:
             modif_score = self.score_for_current_throw()
         elif action == input_controller.Action.UNDO:
             modif_score = "  0 "
+        elif action == input_controller.Action.RESTART:
+            self.force_quit = True
         assert(len(modif_score) == 4)
         return modif_score
 

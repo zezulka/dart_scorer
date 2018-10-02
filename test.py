@@ -358,6 +358,17 @@ class TestGameLogic(unittest.TestCase):
          self.assertEqual(game.points_to_segment_display_string(), "498 495")
          self.assertEqual(game.players, [498, 495, 492, 489])
 
+    def test_restart(self):
+        evs = [
+                  Event(EventType.NUMBER, 1),
+                  Event(EventType.ACTION, Action.CONFIRM),
+                  Event(EventType.ACTION, Action.RESTART)
+              ]
+        game = game_logic.Game501(1, TestingPoller(evs), testing_renderer())
+        self.assertFalse(game.over())
+        game.loop()
+        self.assertTrue(game.over())
+
 class TestPosition(unittest.TestCase):
     def test_add(self):
         second = game_logic.Position.FIRST

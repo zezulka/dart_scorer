@@ -5,9 +5,9 @@ from enum import Enum
 from game_logic import GameType, UserConfig, game_factory
 
 def main():
-    input_ctrl = input_controller.EventPoller()
-    with game_factory() as game:
-        game.loop()
+    while True:
+        with game_factory() as game:
+            game.loop()
     return 0
 
 if __name__ == "__main__":

@@ -23,9 +23,14 @@ class Action(Enum):
     DOUBLE = 2
     TRIPLE = 3
     UNDO = 4
+    RESTART = 5
+
 # KEY_NUMLOCK
-CODE_TO_ACTION_DICT = { ecodes.KEY_KPENTER : Action.CONFIRM, ecodes.KEY_KPPLUS : Action.TRIPLE, 
-                        ecodes.KEY_KPMINUS : Action.DOUBLE, ecodes.KEY_BACKSPACE : Action.UNDO }
+CODE_TO_ACTION_DICT = { 
+                        ecodes.KEY_KPENTER : Action.CONFIRM, ecodes.KEY_KPPLUS : Action.TRIPLE, 
+                        ecodes.KEY_KPMINUS : Action.DOUBLE, ecodes.KEY_BACKSPACE : Action.UNDO,
+                        ecodes.KEY_KPASTERISK : Action.RESTART
+                       }
 # end of constants
 
 class EventType(Enum):
