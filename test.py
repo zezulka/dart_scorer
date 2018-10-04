@@ -369,6 +369,39 @@ class TestGameLogic(unittest.TestCase):
         game.loop()
         self.assertTrue(game.over())
 
+    def test_undo_display_text(self):
+        evs = [
+                  Event(EventType.NUMBER, 2),
+                  Event(EventType.NUMBER, 0),
+                  Event(EventType.ACTION, Action.CONFIRM),
+                  Event(EventType.ACTION, Action.UNDO)
+              ]
+        game = game_logic.Game501(1, TestingPoller(evs), testing_renderer())
+        game.loop()
+        self.assertEqual(game.renderer.current_display_score, "  0 " * 3)
+
+    def test_undo_game_logic(self):
+        evs = [
+                  Event(EventType.NUMBER, 2),
+                  Event(EventType.NUMBER, 0),
+                  Event(EventType.ACTION, Action.CONFIRM),
+                  Event(EventType.ACTION, Action.UNDO)
+              ]
+        game = game_logic.Game501(1, TestingPoller(evs), testing_renderer())
+        game.loop()
+        self.assertEqual(game.players[0], 501)
+
+    def test_undo_segment_string(self):
+        evs = [
+                  Event(EventType.NUMBER, 2),
+                  Event(EventType.NUMBER, 0),
+                  Event(EventType.ACTION, Action.CONFIRM),
+                  Event(EventType.ACTION, Action.UNDO)
+              ]
+        game = game_logic.Game501(1, TestingPoller(evs), testing_renderer())
+        game.loop()
+        self.assertEqual(game.points_to_segment_display_string(), "501")
+
 class TestPosition(unittest.TestCase):
     def test_add(self):
         second = game_logic.Position.FIRST

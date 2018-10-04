@@ -22,14 +22,15 @@ class Action(Enum):
     CONFIRM = 1
     DOUBLE = 2
     TRIPLE = 3
-    UNDO = 4
+    CLEAR = 4
     RESTART = 5
+    UNDO = 6
 
 # KEY_NUMLOCK
 CODE_TO_ACTION_DICT = { 
                         ecodes.KEY_KPENTER : Action.CONFIRM, ecodes.KEY_KPPLUS : Action.TRIPLE, 
-                        ecodes.KEY_KPMINUS : Action.DOUBLE, ecodes.KEY_BACKSPACE : Action.UNDO,
-                        ecodes.KEY_KPASTERISK : Action.RESTART
+                        ecodes.KEY_KPMINUS : Action.DOUBLE, ecodes.KEY_BACKSPACE : Action.CLEAR,
+                        ecodes.KEY_KPASTERISK : Action.RESTART, ecodes.KEY_KPSLASH : Action.UNDO
                        }
 # end of constants
 

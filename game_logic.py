@@ -253,10 +253,20 @@ class Game501:
             if self.round.current_position == Position.FIRST or curr_pts <= 0:
                 self.next_round()
             modif_score = self.score_for_current_throw()
-        elif action == input_controller.Action.UNDO:
+        elif action == input_controller.Action.CLEAR:
             modif_score = "  0 "
         elif action == input_controller.Action.RESTART:
             self.force_quit = True
+        elif action == input_controller.Action.UNDO:
+            if self.round.current_position != Position.FIRST:
+                self.round.current_position += 2 # 2 is congruent to -1 (mod 3)
+                if self.round.current_position == Position.FIRST:
+                    self.round.first_throw = Throw(0, 1)
+                elif self.round.current_position == Position.SECOND:
+                    self.round.second_throw = Throw(0, 1)
+                elif self.round.current_position == Position.THIRD:
+                    self.round.third_throw = Throw(0, 1)
+                modif_score = "  0 "
         assert(len(modif_score) == 4)
         return modif_score
 
