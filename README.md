@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/zezulka/dart_scorer.svg?branch=master)](https://travis-ci.org/zezulka/dart_scorer)
+
 Funny little project for my own amusement.
 If everything goes well, this should work very similar to a darts scorer.
 
