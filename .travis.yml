@@ -3,5 +3,7 @@ python:
   - "3.6"
   - "3.7"
 
+before_script:
+  - ./install
 script:
   - ./src/test.py
