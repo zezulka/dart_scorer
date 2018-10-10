@@ -2,4 +2,4 @@
 
 PATH_TO_MAIN=`dirname .`/src
 
-python ${PATH_TO_MAIN}/main.py
+python3 ${PATH_TO_MAIN}/main.py

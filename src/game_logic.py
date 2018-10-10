@@ -1,6 +1,5 @@
 import input_controller
 import max7219_controller
-import lcd_display
 from re import match
 from evdev import categorize, uinput, ecodes as e
 from time import sleep
@@ -91,6 +90,9 @@ def game_type_factory(number):
 
 class DisplayController:
     def __init__(self):
+        # We want to be able to run tests (HW dependless) everywhere
+        #     this module can only be run on RPi
+        import lcd_display
         self.segment_d = max7219_controller.MAX7219()
         self.lcd_d = lcd_display.LcdDisplay()
 

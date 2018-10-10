@@ -13,11 +13,16 @@ There are three devices which I would like to wire together:
 
 Prerequisites
 
+Raspi
 1. ```pip3 install max7219 evdev luma.led_matrix pillow```
 2. ```sudo apt-get install libopenjp2-7```
+
+Other (for development on non-Raspi devices)
+1. sudo dnf install python3-devel
+2. pip3 install max7219 evdev luma.led_matrix pillow
 
 Installation and execution
 
 1. ```git clone https://github.com/zezulka/dart_scorer```
 2. ```cd dart_scorer```
-3. ```./main```
+3. ```. bin/dart_scorer.sh```

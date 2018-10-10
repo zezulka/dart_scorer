@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 import game_logic
 import input_controller
 from enum import Enum
