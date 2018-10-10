@@ -18,12 +18,12 @@ There are three devices which I would like to wire together:
 Prerequisites
 
 Raspi
-1. ```pip3 install max7219 evdev luma.led_matrix pillow```
+1. ```pip3 install --user max7219 evdev luma.led_matrix pillow```
 2. ```sudo apt-get install libopenjp2-7```
 
 Other (for development on non-Raspi devices)
-1. sudo dnf install python3-devel
-2. pip3 install max7219 evdev luma.led_matrix pillow
+1. ```sudo dnf install python3-devel```
+2. ```pip3 install --user evdev```
 
 Installation and execution
 
