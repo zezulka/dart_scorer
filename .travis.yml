@@ -13,4 +13,4 @@ python:
 before_script:
   - ./install
 script:
-  - ./src/test.py
+  - ./test
