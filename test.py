@@ -44,7 +44,7 @@ class TestingPoller:
 def testing_renderer():
     return Renderer(TestingDisplayController())
 
-class TestGameLogic(unittest.TestCase):
+class Test501GameLogic(unittest.TestCase):
     def test_single_score(self):
         evs = [
                   Event(EventType.NUMBER, 1),
@@ -89,7 +89,7 @@ class TestGameLogic(unittest.TestCase):
          self.assertEqual(game.players[0], 501)
          game.loop()
          self.assertEqual(game.players[0], 441)
-     
+
     def test_game_nine_finisher(self):
          evs = [
                    Event(EventType.NUMBER, 2),
@@ -331,7 +331,7 @@ class TestGameLogic(unittest.TestCase):
          game.loop()
          self.assertEqual(game.points_to_segment_display_string(), "498 495")
          self.assertEqual(game.players, [498, 495, 492])
-   
+
     def test_points_to_segment_display_string_three_people_two_rounds(self):
          evs = []
          for i in range(1,3):
@@ -344,7 +344,7 @@ class TestGameLogic(unittest.TestCase):
          game.loop()
          self.assertEqual(game.points_to_segment_display_string(), "501")
          self.assertEqual(game.players, [498, 495, 501])
- 
+
     def test_points_to_segment_display_string_four_people(self):
          evs = []
          for i in range(1,5):
@@ -401,6 +401,27 @@ class TestGameLogic(unittest.TestCase):
         game = game_logic.Game501(1, TestingPoller(evs), testing_renderer())
         game.loop()
         self.assertEqual(game.points_to_segment_display_string(), "501")
+
+    def test_segment_string_digits_on_the_same_place(self):
+        evs = [
+                  Event(EventType.NUMBER, 2),
+                  Event(EventType.NUMBER, 0),
+                  Event(EventType.ACTION, Action.CONFIRM),
+              ] * 3 * 7 * 2 # 3 throws per round, seven rounds so that
+                            # score is below 100 and there are two players
+        game = game_logic.Game501(2, TestingPoller(evs), testing_renderer())
+        game.loop()
+        self.assertEqual(game.points_to_segment_display_string(), "81  " + "81")
+
+    def test_segment_string_digits_on_the_same_place_player_with_even_index(self):
+        evs = [
+                  Event(EventType.NUMBER, 2),
+                  Event(EventType.NUMBER, 0),
+                  Event(EventType.ACTION, Action.CONFIRM),
+              ] * ( 3 * 7 * 2 - 1)
+        game = game_logic.Game501(2, TestingPoller(evs), testing_renderer())
+        game.loop()
+        self.assertEqual(game.points_to_segment_display_string(), "81  " + "101")
 
 class TestPosition(unittest.TestCase):
     def test_add(self):

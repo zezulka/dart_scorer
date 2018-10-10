@@ -53,7 +53,7 @@ class GameRound:
 
     def clear(self):
         self.__init__()
-    
+
     def points(self):
         return reduce(lambda acc, next_: acc + next_.points(), 
                       filter(lambda throw : throw is not None, 
@@ -134,7 +134,7 @@ class Renderer:
         num_players = self.wait_for_next_number(input_ctrl)
         first_line += " " + str(num_players)
         self.displ_ctrl.lcd_set_first_line(first_line)
-        
+
         second_line = "game type:"
         self.displ_ctrl.lcd_set_second_line(second_line)
         game_id = self.wait_for_next_number(input_ctrl)
@@ -142,7 +142,7 @@ class Renderer:
         second_line += " " + game_type.name
         self.displ_ctrl.lcd_set_second_line(second_line, 0.50)
         self.clear_lcd()
-        return UserConfig(num_players, game_type, input_ctrl)    
+        return UserConfig(num_players, game_type, input_ctrl)
 
     def clear_lcd(self):
         self.current_display_score = self.__init_display_score
@@ -291,17 +291,19 @@ class Game501:
         return score
 
     def points_to_segment_display_string(self):
+        curr_points = str(self.players[self.current_player] - self.round.points())
         if self.num_players == 1:
-            return str(self.players[self.current_player] - self.round.points())
+            return curr_points
         points = ""
         if (self.current_player % 2 == 0):
-            points += str(self.players[self.current_player] - self.round.points())
+            points += curr_points
             next_player_pos = self.current_player + 1
             if next_player_pos != self.num_players:
-                points += " " + str(self.players[next_player_pos])
+                points = "{:4}".format(points)
+                points += str(self.players[next_player_pos])
         else:
-            points += str(self.players[self.current_player - 1]) + " "
-            points += str(self.players[self.current_player] - self.round.points())
+            points += "{:4}".format(str(self.players[self.current_player - 1]))
+            points += curr_points
         return points
 
     def loop(self):
@@ -313,7 +315,7 @@ class Game501:
             if not next_event:
                 return
             after_fun = None
-            if next_event.e_type == input_controller.EventType.NUMBER: 
+            if next_event.e_type == input_controller.EventType.NUMBER:
                 after_fun = self.score_after_digit
             elif next_event.e_type == input_controller.EventType.ACTION:
                 after_fun = self.score_after_action
