@@ -4,7 +4,9 @@ Funny little project for my own amusement.
 If everything goes well, this should work very similar to a darts scorer.
 
 This Python script is to be primarily run on a Raspberry Pi 
-(but you can port it to other devices of course).
+(but you can port it to other devices of course). Tests can be run
+on non-RPi devices, too (which can be beneficial for the application
+development).
 
 There are three devices which I would like to wire together:
 
