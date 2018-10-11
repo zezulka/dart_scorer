@@ -9,7 +9,7 @@ from enum import Enum
 # Path to the numerical keyboard
 NUM_KEY_PATH = "/dev/input/by-id/usb-SIGMACHIP_USB_Keyboard-event-kbd"
 KEY_DOWN     = KeyEvent.key_down
-CODE_TO_NUMBER_DICT = {ecodes.KEY_KP0 : 0, ecodes.KEY_KP1 : 1, ecodes.KEY_KP2 : 2, ecodes.KEY_KP3 : 3, ecodes.KEY_KP4 : 4, 
+CODE_TO_NUMBER_DICT = {ecodes.KEY_KP0 : 0, ecodes.KEY_KP1 : 1, ecodes.KEY_KP2 : 2, ecodes.KEY_KP3 : 3, ecodes.KEY_KP4 : 4,
                        ecodes.KEY_KP5 : 5, ecodes.KEY_KP6 : 6, ecodes.KEY_KP7 : 7, ecodes.KEY_KP8 : 8, ecodes.KEY_KP9 : 9,
                        ecodes.KEY_SPACE : 20, ecodes.KEY_KPDOT : 25}
 class Action(Enum):
@@ -61,8 +61,7 @@ class EventPoller:
         self.keyboard = InputDevice(NUM_KEY_PATH)
         self.ev_stack = []
 
-    # Should return None when there is no event available at the moment.
-    def next_event(self):
+    def __get_next_event(self):
         if len(self.ev_stack) > 0:
             return self.ev_stack.pop()
         r,w,x = select([self.keyboard], [], [])
@@ -74,13 +73,20 @@ class EventPoller:
             candidate = self.keyboard.read_one()
             if candidate is not None and candidate.type == ecodes.EV_KEY and candidate.value == KEY_DOWN:
                 event = candidate
+        return event
+
+
+    # Should return None when there is no event available at the moment.
+    def next_event(self):
+        event = self.__get_next_event()
         if event is not None:
             code = event.code
+            # TODO: uneffective: this looks up the map twice!
             if number_pressed(code):
                 num = code_to_number(code)
                 if num > 10:
                     self.ev_stack.append(Event(EventType.NUMBER, num % 10))
-                    num = ((num % 100) - (num % 10)) / 10
+                    num = (num // 10) % 10
                 return Event(EventType.NUMBER, num)
             elif action_pressed(code):
                 return Event(EventType.ACTION, code_to_action(code))

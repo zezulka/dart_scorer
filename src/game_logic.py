@@ -172,7 +172,7 @@ class Renderer:
         no *= 4
         aux_str = "####" + " " * 8
         aux_str = aux_str[-no:] + aux_str[:-no]
-        self.displ_ctrl.lcd_set_second_line(aux_str)        
+        self.displ_ctrl.lcd_set_second_line(aux_str)
 
     def warning(self, text):
         warning_duration = 0.75
@@ -273,7 +273,7 @@ class Game501:
 
     def score_after_digit(self, digit):
         space = " "
-        digit = str(digit)
+        digit = str(int(digit))
         score = self.score_for_current_throw()
         if match(space * 2 + "0" + "[ DT]", score):
             appendix = score[3]
@@ -308,9 +308,9 @@ class Game501:
         return points
 
     def loop(self):
-        while not self.over():           
+        while not self.over():
             self.renderer.highlight_current_throw(self.round.current_position.to_int())
-            self.renderer.score() 
+            self.renderer.score()
             self.renderer.points(self.points_to_segment_display_string())
             next_event = self.input_ctrl.next_event()
             if not next_event:
