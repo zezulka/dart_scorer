@@ -1,9 +1,9 @@
-import input_controller
-from re import match
-from evdev import categorize, uinput, ecodes as e
-from time import sleep
-from enum import Enum
 from functools import reduce
+from re import match
+from time import sleep
+from enum import IntEnum, Enum, unique
+
+import input_controller
 
 class Throw:
     def __init__(self, pts, multiplier):
@@ -13,34 +13,29 @@ class Throw:
     def points(self):
         return self.pts * self.multiplier
 
-class Position(Enum):
-    FIRST = 1,
-    SECOND = 2,
-    THIRD = 3,
+@unique
+class Position(IntEnum):
+    FIRST = 0,
+    SECOND = 1,
+    THIRD = 2,
 
     # https://docs.python.org/3/reference/datamodel.html#special-method-names
     # += operator
     def __add__(self, other):
         other = other % 3
-        if other == 0:
-            return self
-        elif other == 1:
-            if self == Position.FIRST:
-                return Position.SECOND
-            elif self == Position.SECOND:
-                return  Position.THIRD
-            elif self == Position.THIRD:
-                return Position.FIRST
-        elif other == 2:
-            if self == Position.FIRST:
-                return  Position.THIRD
-            elif self == Position.SECOND:
-                return Position.FIRST
-            elif self == Position.THIRD:
-                return Position.SECOND
+        return self.__from_int((other + self.value) % 3)
+
+    def __from_int(self, i):
+        if i == 0:
+            return Position.FIRST
+        elif i == 1:
+            return Position.SECOND
+        elif i == 2:
+            return Position.THIRD
+        raise ValueError("The integer passed must be in {0,1,2}.")
 
     def to_int(self):
-        return self.value[0]
+        return self.value
 
 class GameRound:
     def __init__(self):
@@ -53,27 +48,45 @@ class GameRound:
         self.__init__()
 
     def points(self):
-        return reduce(lambda acc, next_: acc + next_.points(), 
-                      filter(lambda throw : throw is not None, 
-                             [self.first_throw, self.second_throw, self.third_throw]), 
+        return reduce(lambda acc, next_: acc + next_.points(),
+                      filter(lambda throw: throw is not None,
+                             [self.first_throw, self.second_throw, self.third_throw]),
                       0)
 
+def get_user_config(renderer, input_ctrl):
+    num_players = -1
+    game_type = None
+    first_line = "no. players:"
+    renderer.prompt_text_first_line(first_line)
+    num_players = input_ctrl.wait_for_next_number()
+    first_line += " " + str(num_players)
+    renderer.prompt_text_first_line(first_line)
+
+    second_line = "game type:"
+    renderer.prompt_text_second_line(second_line)
+    game_id = input_ctrl.wait_for_next_number()
+    game_type = GameType(game_id)
+    second_line += " " + game_type.name
+    renderer.prompt_text_second_line(second_line, 0.50)
+    renderer.empty_lcd()
+    return UserConfig(num_players, game_type)
+
 def game_factory():
+    input_ctrl = input_controller.EventPoller()
     renderer = Renderer(DisplayController())
-    user_config = renderer.get_user_config()
-    input_ctrl = input_controller.EventPoller() 
+    user_config = get_user_config(renderer, input_ctrl)
     if user_config.game_type == GameType.X01:
         return Game501(user_config.num_players, input_ctrl, renderer)
     else:
         raise ValueError("Not supported yet.")
 
 class GameType(Enum):
-    X01 = 1,
-    Cricket = 2,
-    RoundTheClock = 3,
+    X01 = 1
+    Cricket = 2
+    RoundTheClock = 3
 
 class UserConfig:
-    def __init__(self, num_players, game_type, input_ctrl):
+    def __init__(self, num_players, game_type):
         if num_players < 1:
             raise ValueError("There must be at least one player in the game.")
         if not game_type:
@@ -81,11 +94,11 @@ class UserConfig:
         self.num_players = num_players
         self.game_type = game_type
 
-def game_type_factory(number):
-    if number == 1:
-        return GameType.X01
-    else:
-        raise ValueError("Unsupported game type.")
+def lcd_set_line(set_fun, text, duration):
+    set_fun(text)
+    if duration > 0:
+        sleep(duration)
+        set_fun("")
 
 class DisplayController:
     def __init__(self):
@@ -98,17 +111,11 @@ class DisplayController:
     def segment_set_text(self, text):
         self.segment_d.show_message(text)
 
-    def lcd_set_line(self, set_fun, text, duration):
-        set_fun(text)
-        if duration > 0:
-            sleep(duration)
-            set_fun("")
-
     def lcd_set_first_line(self, text, duration=-1.0):
-        self.lcd_set_line(self.lcd_d.first_line, text, duration)
+        lcd_set_line(self.lcd_d.first_line, text, duration)
 
     def lcd_set_second_line(self, text, duration=-1.0):
-        self.lcd_set_line(self.lcd_d.second_line, text, duration)
+        lcd_set_line(self.lcd_d.second_line, text, duration)
 
     def clean_up(self):
         self.lcd_d.clean_up()
@@ -120,34 +127,20 @@ class Renderer:
         self.current_display_score = self.__init_display_score
         self.displ_ctrl = displ_ctrl
 
-    def wait_for_next_number(self, input_ctrl):
-        while True:
-            e = input_ctrl.next_event()
-            if e.e_type == input_controller.EventType.NUMBER:
-                return e.value
+    def prompt_text_first_line(self, text):
+        self.displ_ctrl.lcd_set_first_line(text)
 
-    def get_user_config(self):
-        input_ctrl = input_controller.EventPoller()
-        num_players = -1
-        game_type = None
-        first_line = "no. players:"
-        self.displ_ctrl.lcd_set_first_line(first_line)
-        num_players = self.wait_for_next_number(input_ctrl)
-        first_line += " " + str(num_players)
-        self.displ_ctrl.lcd_set_first_line(first_line)
-
-        second_line = "game type:"
-        self.displ_ctrl.lcd_set_second_line(second_line)
-        game_id = self.wait_for_next_number(input_ctrl)
-        game_type = game_type_factory(game_id)
-        second_line += " " + game_type.name
-        self.displ_ctrl.lcd_set_second_line(second_line, 0.50)
-        self.clear_lcd()
-        return UserConfig(num_players, game_type, input_ctrl)
+    def prompt_text_second_line(self, text, duration=-1.0):
+        self.displ_ctrl.lcd_set_second_line(text, duration)
 
     def clear_lcd(self):
         self.current_display_score = self.__init_display_score
         self.score()
+
+    def empty_lcd(self):
+        self.displ_ctrl.lcd_set_first_line("")
+        self.displ_ctrl.lcd_set_second_line("")
+        self.current_display_score = self.__init_display_score
 
     def clean_up(self):
         self.displ_ctrl.clean_up()
@@ -157,18 +150,17 @@ class Renderer:
 
     def score(self):
         self.displ_ctrl.lcd_set_first_line(self.current_display_score)
-   
+
     def subscore_for_throw(self, pos):
-        return self.current_display_score[ ((pos - 1) * 4) : (pos * 4) ]
- 
+        return self.current_display_score[(pos * 4) : ((pos + 1) * 4)]
+
     def substitute_score_on_position(self, score, pos):
-        if score == None or len(score) != 4:
+        if score is None or len(score) != 4:
             raise ValueError("the score string must be of length 4")
-        self.current_display_score = self.current_display_score[:((pos - 1) * 4)] + score + \
-                                     self.current_display_score[(pos * 4):]
+        self.current_display_score = self.current_display_score[:((pos) * 4)] + score + \
+                                     self.current_display_score[((pos + 1) * 4):]
 
     def highlight_current_throw(self, no):
-        no -= 1
         no *= 4
         aux_str = "####" + " " * 8
         aux_str = aux_str[-no:] + aux_str[:-no]
@@ -181,8 +173,8 @@ class Renderer:
 class Game501:
     def __init__(self, num_players, input_ctrl, renderer):
         self.round = GameRound()
-        self.input_ctrl = input_ctrl
         self.renderer = renderer
+        self.input_ctrl = input_ctrl
         self.current_player = 0
         self.num_players = num_players
         self.players = [501] * num_players
@@ -190,9 +182,9 @@ class Game501:
 
     def __enter__(self):
         return self
- 
+
     def over(self):
-        return self.force_quit or reduce(lambda x,y: x or y == 0, self.players, False)
+        return self.force_quit or reduce(lambda x, y: x or y == 0, self.players, False)
 
     def __exit__(self, _type, _value, _tb):
         self.renderer.clean_up()
@@ -204,7 +196,7 @@ class Game501:
         self.renderer.clear_lcd()
         self.current_player = (self.current_player + 1) % self.num_players
         self.round.clear()
-    
+
     # TODO: the parsing is really weird, we should get the information
     # from somewhere else
     def save_points_for_current_throw(self):
@@ -229,7 +221,7 @@ class Game501:
         return self.renderer.subscore_for_throw(curr_pos_int)
 
     def substitute_score_at_current_throw(self, score):
-        if score == None or len(score) != 4:
+        if score is None or len(score) != 4:
             raise ValueError("the score string must be of length 4")
         curr_pos_int = self.round.current_position.to_int()
         self.renderer.substitute_score_on_position(score, curr_pos_int)

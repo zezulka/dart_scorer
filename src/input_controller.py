@@ -1,9 +1,9 @@
 # Module responsible for controlling and reading from input devices (in this case,
 # the only input device will be the numerical keyboard).
-from evdev import InputDevice, categorize, ecodes 
-from evdev.events import KeyEvent
 from select import select
 from enum import Enum
+from evdev import InputDevice, categorize, ecodes
+from evdev.events import KeyEvent
 
 # Constants
 # Path to the numerical keyboard
@@ -27,8 +27,8 @@ class Action(Enum):
     UNDO = 6
 
 # KEY_NUMLOCK
-CODE_TO_ACTION_DICT = { 
-                        ecodes.KEY_KPENTER : Action.CONFIRM, ecodes.KEY_KPPLUS : Action.TRIPLE, 
+CODE_TO_ACTION_DICT = {
+                        ecodes.KEY_KPENTER : Action.CONFIRM, ecodes.KEY_KPPLUS : Action.TRIPLE,
                         ecodes.KEY_KPMINUS : Action.DOUBLE, ecodes.KEY_BACKSPACE : Action.CLEAR,
                         ecodes.KEY_KPASTERISK : Action.RESTART, ecodes.KEY_KPSLASH : Action.UNDO
                        }
@@ -37,7 +37,6 @@ CODE_TO_ACTION_DICT = {
 class EventType(Enum):
     ACTION = 0
     NUMBER = 1
-    NOTHING = 2
 
 class Event:
     def __init__(self, e_type, value):
@@ -62,34 +61,32 @@ class EventPoller:
         self.ev_stack = []
 
     def __get_next_event(self):
-        if len(self.ev_stack) > 0:
-            return self.ev_stack.pop()
         r,w,x = select([self.keyboard], [], [])
-        # An arbitrary number for now
-        num_tries = 1000
-        event = None
-        while event == None and num_tries > 0:
-            num_tries -= 1
-            candidate = self.keyboard.read_one()
-            if candidate is not None and candidate.type == ecodes.EV_KEY and candidate.value == KEY_DOWN:
-                event = candidate
-        return event
+        for event in self.keyboard.read_loop():
+            if event is not None and event.type == ecodes.EV_KEY and event.value == KEY_DOWN:
+                return event
+        #https://python-evdev.readthedocs.io/en/latest/apidoc.html?highlight=inputdevice#evdev.device.InputDevice
+        raise ValueError("read_loop() shouldn't have ended!")
 
+    def wait_for_next_number(self):
+        while True:
+            ev = self.next_event()
+            if ev.e_type == EventType.NUMBER:
+                return ev.value
 
     # Should return None when there is no event available at the moment.
     def next_event(self):
+        if len(self.ev_stack) > 0:
+            return self.ev_stack.pop()
         event = self.__get_next_event()
-        if event is not None:
-            code = event.code
-            # TODO: uneffective: this looks up the map twice!
-            if number_pressed(code):
-                num = code_to_number(code)
-                if num > 10:
-                    self.ev_stack.append(Event(EventType.NUMBER, num % 10))
-                    num = (num // 10) % 10
-                return Event(EventType.NUMBER, num)
-            elif action_pressed(code):
-                return Event(EventType.ACTION, code_to_action(code))
-            else:
-                print(categorize(event))
-        return Event(EventType.NOTHING, -1)
+        code = event.code
+        if number_pressed(code):
+            num = code_to_number(code)
+            if num > 10:
+                self.ev_stack.append(Event(EventType.NUMBER, num % 10))
+                num = (num // 10) % 10
+            return Event(EventType.NUMBER, num)
+        elif action_pressed(code):
+            return Event(EventType.ACTION, code_to_action(code))
+        else:
+            print(categorize(event))

@@ -12,7 +12,7 @@ from game_logic import Renderer
 
 class TestingDisplayController:
     def __init__(self):
-        pass     
+        pass
 
     def segment_set_text(self, _):
         pass
@@ -29,12 +29,11 @@ class TestingDisplayController:
 class TestingPoller:
     def __init__(self, event_array):
         self.event_queue = Queue()
-        self.fill_queue(event_array)
+        self.__fill_queue(event_array)
 
-    # To be used in the initializer only.
-    def fill_queue(self, event_array):
+    def __fill_queue(self, event_array):
         for event in event_array:
-            self.event_queue.put(event) 
+            self.event_queue.put(event)
 
     def next_event(self):
         if self.event_queue.empty():
@@ -180,7 +179,7 @@ class Test501GameLogic(unittest.TestCase):
                    Event(EventType.ACTION, Action.CONFIRM)
                 ]
          # Player misses the board twice
-         evs += [  
+         evs += [
                    Event(EventType.ACTION, Action.CONFIRM),
                    Event(EventType.ACTION, Action.CONFIRM)
                 ]
