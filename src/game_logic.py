@@ -312,8 +312,6 @@ class Game501:
                 after_fun = self.score_after_digit
             elif next_event.e_type == input_controller.EventType.ACTION:
                 after_fun = self.score_after_action
-            elif next_event.e_type == input_controller.EventType.NOTHING:
-                continue
             else:
                 raise ValueError("Unexpected event occurred.")
             self.substitute_score_at_current_throw(after_fun(next_event.value))

@@ -1,0 +1,8 @@
+[MASTER]
+extension-pkg-whitelist=evdev
+
+[BASIC]
+variable-rgx=(([a-z][a-z_]{1,30})|(_[a-z_]*))$
+
+[DESIGN]
+min-public-methods=0
