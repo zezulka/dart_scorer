@@ -1,5 +1,6 @@
 """Module responsible for controlling and reading from input devices (for the time being,\
  the only input device will be the numerical keyboard)."""
+from sys import stderr as serr
 from select import select
 from enum import Enum
 from evdev import InputDevice, categorize, ecodes
@@ -72,9 +73,13 @@ def code_to_action(code):
 class EventPoller:
     """Class reading scancodes from an input device with a hardcoded path NUM_KEY_PATH.\
  This implementation is Linux compatible only."""
-    # TODO: do not ignore cases when the keyboard is not present in the /dev tree.
     def __init__(self):
-        self.keyboard = InputDevice(NUM_KEY_PATH)
+        try:
+            self.keyboard = InputDevice(NUM_KEY_PATH)
+        except FileNotFoundError:
+            print("It seems that the numerical keyboard is not available at the moment.\
+ Please check that the keyboard is connected and try again.", serr)
+            exit(1)
         self.ev_stack = []
 
     def __get_next_event(self):
