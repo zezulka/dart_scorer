@@ -2,6 +2,7 @@ from functools import reduce
 from re import match
 from time import sleep
 from enum import IntEnum, Enum, unique
+from abc import ABCMeta, abstractmethod
 
 import input_controller
 
@@ -15,9 +16,9 @@ class Throw:
 
 @unique
 class Position(IntEnum):
-    FIRST = 0,
-    SECOND = 1,
-    THIRD = 2,
+    FIRST = 0
+    SECOND = 1
+    THIRD = 2
 
     # https://docs.python.org/3/reference/datamodel.html#special-method-names
     # += operator
@@ -170,24 +171,71 @@ class Renderer:
         warning_duration = 0.75
         self.displ_ctrl.lcd_set_second_line(text, warning_duration)
 
-class Game501:
+class Game(metaclass=ABCMeta):
     def __init__(self, num_players, input_ctrl, renderer):
         self.round = GameRound()
         self.renderer = renderer
         self.input_ctrl = input_ctrl
-        self.current_player = 0
         self.num_players = num_players
-        self.players = [501] * num_players
+        self.current_player = 0
         self.force_quit = False
 
     def __enter__(self):
         return self
 
-    def over(self):
-        return self.force_quit or reduce(lambda x, y: x or y == 0, self.players, False)
-
     def __exit__(self, _type, _value, _tb):
         self.renderer.clean_up()
+
+    def loop(self):
+        while not self.over():
+            self.renderer.highlight_current_throw(self.round.current_position.to_int())
+            self.renderer.score()
+            self.renderer.points(self.points_to_segment_display_string())
+            next_event = self.input_ctrl.next_event()
+            if not next_event:
+                return
+            after_fun = None
+            if next_event.e_type == input_controller.EventType.NUMBER:
+                after_fun = self.score_after_digit
+            elif next_event.e_type == input_controller.EventType.ACTION:
+                after_fun = self.score_after_action
+            else:
+                raise ValueError("Unexpected event occurred.")
+            self.substitute_score_at_current_throw(after_fun(next_event.value))
+
+    @abstractmethod
+    def substitute_score_at_current_throw(score):
+        pass
+
+    @abstractmethod
+    def over(self):
+        pass
+
+    @abstractmethod
+    def score_after_digit(self):
+        pass
+
+    @abstractmethod
+    def score_after_action(self):
+        pass
+
+def cricket_init():
+    result = [(0, i) for i in range(15,21)]
+    result.append((0,25))
+    return result
+
+class Cricket(Game):
+    def __init__(self, num_players, input_ctrl, renderer):
+        super().__init__(num_players, input_ctrl, renderer)
+        self.players = cricket_init() * num_players
+
+class Game501(Game):
+    def __init__(self, num_players, input_ctrl, renderer):
+        super().__init__(num_players, input_ctrl, renderer)
+        self.players = [501] * num_players
+
+    def over(self):
+        return self.force_quit or reduce(lambda x, y: x or y == 0, self.players, False)
 
     def next_round(self):
         curr_pts = self.players[self.current_player] - self.round.points()
@@ -298,20 +346,3 @@ class Game501:
             points += "{:4}".format(str(self.players[self.current_player - 1]))
             points += curr_points
         return points
-
-    def loop(self):
-        while not self.over():
-            self.renderer.highlight_current_throw(self.round.current_position.to_int())
-            self.renderer.score()
-            self.renderer.points(self.points_to_segment_display_string())
-            next_event = self.input_ctrl.next_event()
-            if not next_event:
-                return
-            after_fun = None
-            if next_event.e_type == input_controller.EventType.NUMBER:
-                after_fun = self.score_after_digit
-            elif next_event.e_type == input_controller.EventType.ACTION:
-                after_fun = self.score_after_action
-            else:
-                raise ValueError("Unexpected event occurred.")
-            self.substitute_score_at_current_throw(after_fun(next_event.value))
