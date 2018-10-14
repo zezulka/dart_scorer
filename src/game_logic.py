@@ -78,6 +78,8 @@ def game_factory():
     user_config = get_user_config(renderer, input_ctrl)
     if user_config.game_type == GameType.X01:
         return Game501(user_config.num_players, input_ctrl, renderer)
+    elif user_config.game_type == GameType.Cricket:
+        return Cricket(user_config.num_players, input_ctrl, renderer)
     else:
         raise ValueError("Not supported yet.")
 
@@ -204,7 +206,11 @@ class Game(metaclass=ABCMeta):
             self.substitute_score_at_current_throw(after_fun(next_event.value))
 
     @abstractmethod
-    def substitute_score_at_current_throw(score):
+    def points_to_segment_display_string(self):
+        pass
+
+    @abstractmethod
+    def substitute_score_at_current_throw(self, score):
         pass
 
     @abstractmethod
@@ -228,6 +234,25 @@ class Cricket(Game):
     def __init__(self, num_players, input_ctrl, renderer):
         super().__init__(num_players, input_ctrl, renderer)
         self.players = cricket_init() * num_players
+
+    def substitute_score_at_current_throw(score):
+        pass
+
+    def over(self):
+        return self.force_quit or\
+            reduce(lambda so_far, player: so_far or\
+                                      reduce(lambda in_so_far, (num, _): in_so_far and num == 3,
+                                             player, True),
+                   self.players, False)
+
+    def substitute_score_at_current_throw(self, score):
+        pass
+
+    def score_after_digit(self):
+        pass
+
+    def score_after_action(self):
+        pass
 
 class Game501(Game):
     def __init__(self, num_players, input_ctrl, renderer):
