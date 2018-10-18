@@ -6,13 +6,24 @@ from abc import ABCMeta, abstractmethod
 
 import input_controller
 
+MULT_TO_STR = { 1 : " ", 2 : "D", 3 : "T" }
+
+class Multiplier(IntEnum):
+    SINGLE = 1
+    DOUBLE = 2
+    TRIPLE = 3
+
+    def to_string(self):
+        return MULT_TO_STR[self.value]
+
 class Throw:
-    def __init__(self, pts, multiplier):
-        self.pts = pts
+    def __init__(self, points, multiplier):
+        isinstance(multiplier, Multiplier)
+        self.points = points
         self.multiplier = multiplier
 
-    def points(self):
-        return self.pts * self.multiplier
+    def points_with_multiplier(self):
+        return self.points * self.multiplier.value
 
 @unique
 class Position(IntEnum):
@@ -40,19 +51,27 @@ class Position(IntEnum):
 
 class GameRound:
     def __init__(self):
-        self.first_throw = None
-        self.second_throw = None
-        self.third_throw = None
-        self.current_position = Position.FIRST
+        self.__throws = [ None, None, None ]
+        self.__current_position = Position.FIRST
 
     def clear(self):
         self.__init__()
 
+    def current_throw(self):
+        return self.__throws[self.__current_position]
+
+    def current_position_int(self):
+        return self.__current_position.value
+
+    def set_current_position(self, pos):
+        self.__current_position = pos
+
+    def set_current_throw(self, throw):
+        self.__throws[self.__current_position] = throw
+
     def points(self):
         return reduce(lambda acc, next_: acc + next_.points(),
-                      filter(lambda throw: throw is not None,
-                             [self.first_throw, self.second_throw, self.third_throw]),
-                      0)
+                      filter(lambda throw: throw is not None, throws), 0)
 
 def get_user_config(renderer, input_ctrl):
     num_players = -1
@@ -154,21 +173,6 @@ class Renderer:
     def score(self):
         self.displ_ctrl.lcd_set_first_line(self.current_display_score)
 
-    def subscore_for_throw(self, pos):
-        return self.current_display_score[(pos * 4) : ((pos + 1) * 4)]
-
-    def substitute_score_on_position(self, score, pos):
-        if score is None or len(score) != 4:
-            raise ValueError("the score string must be of length 4")
-        self.current_display_score = self.current_display_score[:((pos) * 4)] + score + \
-                                     self.current_display_score[((pos + 1) * 4):]
-
-    def highlight_current_throw(self, no):
-        no *= 4
-        aux_str = "####" + " " * 8
-        aux_str = aux_str[-no:] + aux_str[:-no]
-        self.displ_ctrl.lcd_set_second_line(aux_str)
-
     def warning(self, text):
         warning_duration = 0.75
         self.displ_ctrl.lcd_set_second_line(text, warning_duration)
@@ -188,8 +192,15 @@ class Game(metaclass=ABCMeta):
     def __exit__(self, _type, _value, _tb):
         self.renderer.clean_up()
 
+    def highlight_current_throw(self):
+        no = self.round.current_position_int() * 4
+        aux_str = "####" + " " * 8
+        aux_str = aux_str[-no:] + aux_str[:-no]
+        self.renderer.prompt_text_second_line(aux_str)
+
     def loop(self):
         while not self.over():
+            self.highlight_current_throw()
             self.renderer.highlight_current_throw(self.round.current_position.to_int())
             self.renderer.score()
             self.renderer.points(self.points_to_segment_display_string())
@@ -228,7 +239,7 @@ class Game(metaclass=ABCMeta):
 def cricket_init():
     result = [(0, i) for i in range(15,21)]
     result.append((0,25))
-    return result
+    return [result]
 
 class Cricket(Game):
     def __init__(self, num_players, input_ctrl, renderer):
@@ -241,7 +252,7 @@ class Cricket(Game):
     def over(self):
         return self.force_quit or\
             reduce(lambda so_far, player: so_far or\
-                                      reduce(lambda in_so_far, (num, _): in_so_far and num == 3,
+                                      reduce(lambda in_so_far, tup: in_so_far and tup[0] == 3,
                                              player, True),
                    self.players, False)
 
@@ -270,91 +281,71 @@ class Game501(Game):
         self.current_player = (self.current_player + 1) % self.num_players
         self.round.clear()
 
-    # TODO: the parsing is really weird, we should get the information
-    # from somewhere else
-    def save_points_for_current_throw(self):
-        curr_score = self.score_for_current_throw()
-        int_score = int(curr_score[1] + curr_score[2])
-        int_multiplier = 1
-        multiplier = curr_score[3]
-        if multiplier == 'D':
-            int_multiplier = 2
-        elif multiplier == 'T':
-            int_multiplier = 3
-        curr_pos = self.round.current_position
-        if curr_pos == Position.FIRST:
-            self.round.first_throw = Throw(int_score, int_multiplier)
-        elif curr_pos == Position.SECOND:
-            self.round.second_throw = Throw(int_score, int_multiplier)
-        elif curr_pos == Position.THIRD:
-            self.round.third_throw = Throw(int_score, int_multiplier)
+    def __score_for_current_throw(self):
+        """Returns a string of length 4 representing the current throw. This string
+will then be represented to the user. Structrute of the string is defined as follows:
+    at the last position, there will be a multiplier (empty space indicates single,
+    D stands for double and T stands for triple) which will be preceded by a valid
+    number (also in the context of the multiplier, i.e. no " 25T") padded by a 
+    sequence of spaces from the left.
 
-    def score_for_current_throw(self):
-        curr_pos_int = self.round.current_position.to_int()
-        return self.renderer.subscore_for_throw(curr_pos_int)
+Examples of valid strings:
+"  0T"
+" 20 "
+" 19D"
+"  1 "
 
-    def substitute_score_at_current_throw(self, score):
-        if score is None or len(score) != 4:
-            raise ValueError("the score string must be of length 4")
-        curr_pos_int = self.round.current_position.to_int()
-        self.renderer.substitute_score_on_position(score, curr_pos_int)
+Examples of illegal strings:
+"    "
+" 200"
+" 1  "
+"   D"
+"12D "
+"""
+        throw = self.round.current_throw()
+        return "{:3}".format(throw.points) + throw.multiplier.to_string()
 
-    # TODO: there is too much going on in one method...
-    def score_after_action(self, action):
-        modif_score = self.score_for_current_throw()
+    def action_submitted(self, action):
+        points_nominal = self.round.current_throw().points
         if action == input_controller.Action.DOUBLE:
-            modif_score = modif_score[:3] + 'D'
+            self.round.set_current_throw(Throw(points_nominal, Multiplier.DOUBLE))
         elif action == input_controller.Action.TRIPLE:
-            prefix = modif_score[:3]
-            if prefix != " 25":
-                modif_score = prefix + 'T'
-            else:
+            if points_nominal == 25:
                 self.renderer.warning("25T not valid!")
+            else:
+                self.round.set_current_throw(Throw(points_nominal, Multiplier.TRIPLE))
         elif action == input_controller.Action.CONFIRM:
-            self.save_points_for_current_throw()
             curr_pts = curr_pts = self.players[self.current_player] - self.round.points()
             if curr_pts < 0:
                 self.renderer.warning("Overthrow!")
             self.round.current_position += 1
             if self.round.current_position == Position.FIRST or curr_pts <= 0:
                 self.next_round()
-            modif_score = self.score_for_current_throw()
         elif action == input_controller.Action.CLEAR:
-            modif_score = "  0 "
+            self.round.set_current_throw(Throw(0, Multiplier.SINGLE))
         elif action == input_controller.Action.RESTART:
             self.force_quit = True
-        elif action == input_controller.Action.UNDO:
-            if self.round.current_position != Position.FIRST:
-                self.round.current_position += 2 # 2 is congruent to -1 (mod 3)
-                if self.round.current_position == Position.FIRST:
-                    self.round.first_throw = Throw(0, 1)
-                elif self.round.current_position == Position.SECOND:
-                    self.round.second_throw = Throw(0, 1)
-                elif self.round.current_position == Position.THIRD:
-                    self.round.third_throw = Throw(0, 1)
-                modif_score = "  0 "
-        assert(len(modif_score) == 4)
-        return modif_score
+        elif action == input_controller.Action.UNDO and self.round.current_position != Position.FIRST:
+            self.round.current_position += 2 # 2 is congruent to -1 (mod 3)
+            self.round.set_current_throw(Throw(0, Multiplier.SINGLE))
 
-    def score_after_digit(self, digit):
-        space = " "
-        digit = str(int(digit))
-        score = self.score_for_current_throw()
-        if match(space * 2 + "0" + "[ DT]", score):
-            appendix = score[3]
-            score = space * 2 + digit + appendix
-        elif match(space * 2 + "[0-9][ DT]", score):
-            tens = score[2]
-            appendix = score[3]
-            if tens == "1" or (tens == "2" and digit in ["0", "5"]):
-                aux = space + tens + digit + appendix
-                if aux != " 25T":
-                    score = aux
-                else:
-                    self.renderer.warning(tens + digit + " not valid!")
+    def digit_submitted(self, digit):
+        digit = digit
+        throw = self.round.current_throw()
+        points_nominal = throw.points
+        multiplier = throw.multiplier
+        if points_nominal == 0:
+            self.round.set_current_throw(Throw(digit, multiplier))
+        elif points_nominal == 1:
+            self.round.set_current_throw(Throw(points_nominal * 10 + digit, multiplier))
+        elif points_nominal == 2:
+            points_cand = points_nominal * 10 + digit
+            if digit == 0 or (digit == 5 and multiplier != Multiplier.TRIPLE):
+                self.round.set_current_throw(Throw(points_cand, multiplier))
+            else:
+                self.renderer.warning(points_cand + multiplier.to_string() + " not valid!")
         else:
             self.renderer.warning("hit <-")
-        return score
 
     def points_to_segment_display_string(self):
         curr_points = str(self.players[self.current_player] - self.round.points())
