@@ -304,7 +304,7 @@ class Game501(Game):
             if digit == 0 or (digit == 5 and multiplier != Multiplier.TRIPLE):
                 self.round.set_current_throw(Throw(points_cand, multiplier))
             else:
-                self.renderer.warning(points_cand + multiplier.to_string() + " not valid!")
+                self.renderer.warning(str(points_cand) + multiplier.to_string() + " not valid!")
         else:
             self.renderer.warning("hit <-")
 
