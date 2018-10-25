@@ -1,10 +1,7 @@
 import unittest
 
 from test_common import *
-from game_logic import RendererCricket
-
-def testing_renderer():
-    return RendererCricket(TestingDisplayController())
+from game_logic import Renderer
 
 class TestCricket(unittest.TestCase):
     def test_game_over(self):

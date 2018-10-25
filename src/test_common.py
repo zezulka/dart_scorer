@@ -4,11 +4,13 @@ from queue import Queue
 from input_controller import *
 from game_logic import Renderer
 
+def testing_renderer():
+    return Renderer(TestingDisplayController())
+
 # In testing, this should be no-op since
 # the real implementation only directly controls
 # displays.
 # TODO: might add debug messages instead of only calling 'pass'es.
-
 class TestingDisplayController:
     def __init__(self):
         pass

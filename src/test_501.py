@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import unittest
 import game_logic
+from test_common import *
 from queue import Queue
 from input_controller import *
 from game_logic import Renderer
@@ -39,9 +40,6 @@ class TestingPoller:
         if self.event_queue.empty():
             return None
         return self.event_queue.get()
-
-def testing_renderer():
-    return Renderer(TestingDisplayController())
 
 class Test501GameLogic(unittest.TestCase):
     def test_single_score(self):
