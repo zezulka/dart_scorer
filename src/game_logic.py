@@ -21,7 +21,7 @@ class Throw:
         self.points = points
         self.multiplier = multiplier
 
-    def points_with_multiplier(self):
+    def total_points(self):
         return self.points * self.multiplier.value
 
 def zero_throw():
@@ -91,7 +91,7 @@ class GameRound:
 
     def points(self):
         """ Returns number of points which were scored for the given game round and were confirmed by the player. """
-        return reduce(lambda acc, next_: acc + next_.points, self.__throws[:self.__current_position.to_int()], 0)
+        return reduce(lambda acc, next_: acc + next_.total_points(), self.__throws[:self.__current_position.to_int()], 0)
 
 def get_user_config(output_ctrl, input_ctrl):
     num_players = -1
@@ -273,10 +273,10 @@ class Game501(Game):
                 self.round.set_current_throw(Throw(points_nominal, Multiplier.TRIPLE))
         elif action == input_controller.Action.CONFIRM:
             self.round.hop_to_next_position()
-            curr_pts = curr_pts = self.players[self.current_player] - self.round.points()
+            curr_pts = self.players[self.current_player] - self.round.points()
             if curr_pts < 0:
                 self.output_ctrl.warning("Overthrow!")
-            if curr_pts < 0 or self.round.is_over():
+            if curr_pts <= 0 or self.round.is_over():
                 self.__next_round()
         elif action == input_controller.Action.CLEAR:
             self.round.set_current_throw(zero_throw())

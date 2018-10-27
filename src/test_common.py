@@ -11,7 +11,11 @@ except from printing out the current state of its virtual 'displays' to a file."
         self.lcd_second_line = ""
         self.segment_text = ""
         self.output_file = out_file
-        print("ASDFASDFADFASDFA", file=self.output_file)
+
+    def clear(self):
+        self.lcd_first_line = ""
+        self.lcd_second_line = ""
+        self.segment_text = ""
 
     def warning(self, text):
         print("Warn: {}".format(text), file=self.output_file)

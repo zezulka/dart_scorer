@@ -42,6 +42,7 @@ class TestingPoller:
 
 class Test501GameLogic(unittest.TestCase):
     def setUp(self):
+        RENDERER.clear()
         print("\n\n--- {} ---".format(self.id()), file=RENDERER.output_file)
 
     def test_single_score(self):
