@@ -5,6 +5,7 @@ from luma.led_matrix.device import max7219 as max7219_backend
 from luma.core.interface.serial import spi, noop
 from luma.core.virtual import sevensegment
 
+
 class MAX7219:
     def __init__(self):
         serial = spi(port=0, device=0, gpio=noop())

@@ -10,15 +10,16 @@ from evdev.events import KeyEvent
 NUM_KEY_PATH = "/dev/input/by-id/usb-SIGMACHIP_USB_Keyboard-event-kbd"
 KEY_DOWN = KeyEvent.key_down
 CODE_TO_NUMBER_DICT = {
-    ecodes.KEY_KP0 : 0, ecodes.KEY_KP1 : 1, ecodes.KEY_KP2 : 2,
-    ecodes.KEY_KP3 : 3, ecodes.KEY_KP4 : 4, ecodes.KEY_KP5 : 5,
-    ecodes.KEY_KP6 : 6, ecodes.KEY_KP7 : 7, ecodes.KEY_KP8 : 8,
-    ecodes.KEY_KP9 : 9, ecodes.KEY_SPACE : 20, ecodes.KEY_KPDOT : 25
+    ecodes.KEY_KP0: 0, ecodes.KEY_KP1: 1, ecodes.KEY_KP2: 2,
+    ecodes.KEY_KP3: 3, ecodes.KEY_KP4: 4, ecodes.KEY_KP5: 5,
+    ecodes.KEY_KP6: 6, ecodes.KEY_KP7: 7, ecodes.KEY_KP8: 8,
+    ecodes.KEY_KP9: 9, ecodes.KEY_SPACE: 20, ecodes.KEY_KPDOT: 25
 }
 
 
 class Action(Enum):
     """ Enum representing abstract actions from the game logic point of view."""
+
     def __iter__(self):
         for attr in dir(Action):
             if not attr.startswith("__"):
@@ -31,12 +32,14 @@ class Action(Enum):
     RESTART = 5
     UNDO = 6
 
+
 # KEY_NUMLOCK
 CODE_TO_ACTION_DICT = {
-    ecodes.KEY_KPENTER : Action.CONFIRM, ecodes.KEY_KPPLUS : Action.TRIPLE,
-    ecodes.KEY_KPMINUS : Action.DOUBLE, ecodes.KEY_BACKSPACE : Action.CLEAR,
-    ecodes.KEY_KPASTERISK : Action.RESTART, ecodes.KEY_KPSLASH : Action.UNDO
+    ecodes.KEY_KPENTER: Action.CONFIRM, ecodes.KEY_KPPLUS: Action.TRIPLE,
+    ecodes.KEY_KPMINUS: Action.DOUBLE, ecodes.KEY_BACKSPACE: Action.CLEAR,
+    ecodes.KEY_KPASTERISK: Action.RESTART, ecodes.KEY_KPSLASH: Action.UNDO
 }
+
 
 class EventType(Enum):
     """ Enum used for decoding the type of event.\
@@ -44,35 +47,43 @@ class EventType(Enum):
     ACTION = 0
     NUMBER = 1
 
+
 class Event:
     """ Basic struct containing EventType and the value itself.\
  For EventType.NUMBER events, the value represents the raw numeric value (i.e. throw value)\
  and the EventType.ACTION events contain an instance of the Action enum."""
+
     def __init__(self, e_type, value):
         self.e_type = e_type
         self.value = value
+
 
 def number_pressed(code):
     """Returns a bool telling whether the scancode retrieved from an
  input device represents a number."""
     return code in CODE_TO_NUMBER_DICT
 
+
 def code_to_number(code):
     """Mapping from a scancode to the "nominal" value of the key."""
     return CODE_TO_NUMBER_DICT[code]
+
 
 def action_pressed(code):
     """Returns a bool telling whether the scancode retrieved from an
  input device represents a game action."""
     return code in CODE_TO_ACTION_DICT
 
+
 def code_to_action(code):
     """Mapping from a scancode to an Action enum."""
     return CODE_TO_ACTION_DICT[code]
 
+
 class EventPoller:
     """Class reading scancodes from an input device with a hardcoded path NUM_KEY_PATH.\
  This implementation is Linux compatible only."""
+
     def __init__(self):
         try:
             self.keyboard = InputDevice(NUM_KEY_PATH)

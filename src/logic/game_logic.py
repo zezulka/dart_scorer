@@ -3,9 +3,10 @@ from time import sleep
 from enum import IntEnum, Enum, unique
 from abc import ABCMeta, abstractmethod
 
-import input_controller
+from src.input import input_controller
 
-MULT_TO_STR = {1 : " ", 2 : "D", 3 : "T"}
+MULT_TO_STR = {1: " ", 2: "D", 3: "T"}
+
 
 class Multiplier(IntEnum):
     SINGLE = 1
@@ -14,6 +15,7 @@ class Multiplier(IntEnum):
 
     def to_string(self):
         return MULT_TO_STR[self.value]
+
 
 class Throw:
     def __init__(self, points, multiplier):
@@ -24,8 +26,10 @@ class Throw:
     def total_points(self):
         return self.points * self.multiplier.value
 
+
 def zero_throw():
     return Throw(0, Multiplier.SINGLE)
+
 
 @unique
 class Position(IntEnum):
@@ -53,6 +57,7 @@ class Position(IntEnum):
 
     def to_int(self):
         return self.value
+
 
 class GameRound:
     def __init__(self):
@@ -91,11 +96,11 @@ class GameRound:
 
     def points(self):
         """ Returns number of points which were scored for the given game round and were confirmed by the player. """
-        return reduce(lambda acc, next_: acc + next_.total_points(), self.__throws[:self.__current_position.to_int()], 0)
+        return reduce(lambda acc, next_: acc + next_.total_points(), self.__throws[:self.__current_position.to_int()],
+                      0)
+
 
 def get_user_config(output_ctrl, input_ctrl):
-    num_players = -1
-    game_type = None
     first_line = "no. players:"
     output_ctrl.lcd_set_first_line(first_line)
     num_players = input_ctrl.wait_for_next_number()
@@ -110,6 +115,7 @@ def get_user_config(output_ctrl, input_ctrl):
     output_ctrl.lcd_set_second_line(second_line, 0.50)
     return UserConfig(num_players, game_type)
 
+
 def game_factory():
     input_ctrl = input_controller.EventPoller()
     output_ctrl = DisplayController()
@@ -121,10 +127,12 @@ def game_factory():
     else:
         raise ValueError("Not supported yet.")
 
+
 class GameType(Enum):
     X01 = 1
     Cricket = 2
     RoundTheClock = 3
+
 
 class UserConfig:
     def __init__(self, num_players, game_type):
@@ -135,22 +143,25 @@ class UserConfig:
         self.num_players = num_players
         self.game_type = game_type
 
+
 def lcd_set_line(set_fun, text, duration):
     set_fun(text)
     if duration > 0:
         sleep(duration)
         set_fun("")
 
+
 class DisplayController:
     """ Class used for controlling output devices used in the game.
  This class shouldn't be used in tests since it is dependent on
  modules which directly work with physical displays. """
+
     def __init__(self):
         # We want to be able to run tests (HW dependless) everywhere
-        import lcd_display
-        import max7219_controller
-        self.segment_d = max7219_controller.MAX7219()
-        self.lcd_d = lcd_display.LcdDisplay()
+        from src.display import segment
+        from src.display import lcd
+        self.segment_d = segment.MAX7219()
+        self.lcd_d = lcd.LcdDisplay()
 
     def segment_set_text(self, text):
         self.segment_d.show_message(text)
@@ -170,6 +181,7 @@ magic time constant."""
     def clean_up(self):
         self.lcd_d.clean_up()
         self.segment_d.clean_up()
+
 
 class Game(metaclass=ABCMeta):
     def __init__(self, num_players, input_ctrl, output_ctrl):
@@ -224,10 +236,12 @@ game object according to the game rules and the digit itself."""
 game object according to the game rules and the action itself."""
         pass
 
+
 def cricket_init():
     result = [(0, i) for i in range(15, 21)]
     result.append((0, 25))
     return [result]
+
 
 class Cricket(Game):
     def __init__(self, num_players, input_ctrl, output_ctrl):
@@ -236,8 +250,8 @@ class Cricket(Game):
 
     def over(self):
         return self.force_quit or reduce(lambda so_far, player: so_far or
-                                         reduce(lambda in_so_far, tup: in_so_far and tup[0] == 3,
-                                                player, True), self.players, False)
+                                                                reduce(lambda in_so_far, tup: in_so_far and tup[0] == 3,
+                                                                       player, True), self.players, False)
 
     def refresh(self):
         pass
@@ -247,6 +261,7 @@ class Cricket(Game):
 
     def action_submitted(self, value):
         pass
+
 
 class Game501(Game):
 
@@ -282,9 +297,9 @@ class Game501(Game):
             self.round.set_current_throw(zero_throw())
         elif action == input_controller.Action.RESTART:
             self.force_quit = True
-        elif action == input_controller.Action.UNDO and\
-             not self.round.is_first_throw():
-            self.round.hop_to_next_position() # 3 is congruent to -1 (mod 4)
+        elif action == input_controller.Action.UNDO and \
+                not self.round.is_first_throw():
+            self.round.hop_to_next_position()  # 3 is congruent to -1 (mod 4)
             self.round.hop_to_next_position()
             self.round.hop_to_next_position()
             self.round.set_current_throw(zero_throw())
