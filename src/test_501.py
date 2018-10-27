@@ -4,7 +4,6 @@ import game_logic
 from test_common import *
 from queue import Queue
 from input_controller import *
-from game_logic import Renderer
 
 # In testing, this should be no-op since
 # the real implementation only directly controls
@@ -42,39 +41,20 @@ class TestingPoller:
         return self.event_queue.get()
 
 class Test501GameLogic(unittest.TestCase):
+    def setUp(self):
+        print("\n\n--- {} ---".format(self.id()), file=RENDERER.output_file)
+
     def test_single_score(self):
         evs = [
                   Event(EventType.NUMBER, 1),
                   Event(EventType.NUMBER, 0),
                   Event(EventType.ACTION, Action.CONFIRM)
               ]
-        game = game_logic.Game501(1, TestingPoller(evs), testing_renderer())
+        game = game_logic.Game501(1, TestingPoller(evs), RENDERER)
         self.assertEqual(game.players[0], 501)
         game.loop()
         # Points are ONLY subtracted iff the round is over.
         self.assertEqual(game.players[0], 501)
-
-    def test_display_empty_after_one_round(self):
-        evs = [
-                  Event(EventType.NUMBER, 1),
-                  Event(EventType.NUMBER, 0),
-                  Event(EventType.ACTION, Action.CONFIRM)
-              ]
-        game = game_logic.Game501(1, TestingPoller(evs * 3), testing_renderer())
-        game.loop()
-        self.assertEqual(game.renderer.current_display_score, "  0 " * 3)
-
-    def test_whole_round(self):
-         evs = [
-                   Event(EventType.NUMBER, 1),
-                   Event(EventType.NUMBER, 0),
-                   Event(EventType.ACTION, Action.CONFIRM),
-               ]
-         game = game_logic.Game501(1, TestingPoller(evs * 3), testing_renderer())
-         self.assertEqual(game.players[0], 501)
-         game.loop()
-         self.assertEqual(game.players[0], 471)
-         self.assertEqual(game.renderer.current_display_score, "  0 " * 3)
 
     def test_two_rounds(self):
          evs = [
@@ -82,7 +62,7 @@ class Test501GameLogic(unittest.TestCase):
                    Event(EventType.NUMBER, 0),
                    Event(EventType.ACTION, Action.CONFIRM),
                ]
-         game = game_logic.Game501(1, TestingPoller(evs * 6), testing_renderer())
+         game = game_logic.Game501(1, TestingPoller(evs * 6), RENDERER)
          self.assertEqual(game.players[0], 501)
          game.loop()
          self.assertEqual(game.players[0], 441)
@@ -114,7 +94,7 @@ class Test501GameLogic(unittest.TestCase):
                    Event(EventType.ACTION, Action.DOUBLE),
                    Event(EventType.ACTION, Action.CONFIRM)
                 ]
-         game = game_logic.Game501(1, TestingPoller(evs), testing_renderer())
+         game = game_logic.Game501(1, TestingPoller(evs), RENDERER)
          self.assertEqual(game.players[0], 501)
          game.loop()
          self.assertEqual(game.players[0], 0)
@@ -149,7 +129,7 @@ class Test501GameLogic(unittest.TestCase):
                    Event(EventType.ACTION, Action.DOUBLE),
                    Event(EventType.ACTION, Action.CONFIRM)
                 ]
-         game = game_logic.Game501(1, TestingPoller(evs), testing_renderer())
+         game = game_logic.Game501(1, TestingPoller(evs), RENDERER)
          self.assertEqual(game.players[0], 501)
          game.loop()
          self.assertEqual(game.players[0], 0)
@@ -187,7 +167,7 @@ class Test501GameLogic(unittest.TestCase):
                    Event(EventType.ACTION, Action.DOUBLE),
                    Event(EventType.ACTION, Action.CONFIRM)
                 ]
-         game = game_logic.Game501(1, TestingPoller(evs), testing_renderer())
+         game = game_logic.Game501(1, TestingPoller(evs), RENDERER)
          self.assertEqual(game.players[0], 501)
          game.loop()
          self.assertEqual(game.players[0], 0)
@@ -200,7 +180,7 @@ class Test501GameLogic(unittest.TestCase):
                    Event(EventType.ACTION, Action.TRIPLE),
                    Event(EventType.ACTION, Action.CONFIRM)
                ] * 9
-         game = game_logic.Game501(1, TestingPoller(evs), testing_renderer())
+         game = game_logic.Game501(1, TestingPoller(evs), RENDERER)
          self.assertEqual(game.players[0], 501)
          game.loop()
          self.assertEqual(game.players[0], 501 - 3 * 20 * 6)
@@ -219,7 +199,7 @@ class Test501GameLogic(unittest.TestCase):
                    Event(EventType.NUMBER, 6),
                    Event(EventType.ACTION, Action.CONFIRM)
                 ]
-         game = game_logic.Game501(1, TestingPoller(evs), testing_renderer())
+         game = game_logic.Game501(1, TestingPoller(evs), RENDERER)
          self.assertEqual(game.players[0], 501)
          game.loop()
          self.assertEqual(game.players[0], 501 - 3 * 18 * 9)
@@ -241,7 +221,7 @@ class Test501GameLogic(unittest.TestCase):
                    Event(EventType.NUMBER, 2),
                    Event(EventType.ACTION, Action.CONFIRM)
                 ]
-         game = game_logic.Game501(1, TestingPoller(evs), testing_renderer())
+         game = game_logic.Game501(1, TestingPoller(evs), RENDERER)
          self.assertEqual(game.players[0], 501)
          game.loop()
          self.assertEqual(game.players[0], 501 - 3 * 18 * 9)
@@ -257,7 +237,7 @@ class Test501GameLogic(unittest.TestCase):
                    Event(EventType.ACTION, Action.CONFIRM),
                    Event(EventType.ACTION, Action.CONFIRM)
                 ]
-         game = game_logic.Game501(1, TestingPoller(evs), testing_renderer())
+         game = game_logic.Game501(1, TestingPoller(evs), RENDERER)
          self.assertEqual(game.players[0], 501)
          game.loop()
          # Note: the first throw will be "25" since the intermediate result is not erased
@@ -275,7 +255,7 @@ class Test501GameLogic(unittest.TestCase):
                    Event(EventType.ACTION, Action.CONFIRM),
                    Event(EventType.ACTION, Action.CONFIRM)
                 ]
-         game = game_logic.Game501(1, TestingPoller(evs), testing_renderer())
+         game = game_logic.Game501(1, TestingPoller(evs), RENDERER)
          self.assertEqual(game.players[0], 501)
          game.loop()
          # Note: the first throw will be "2" since the intermediate result is not erased
@@ -287,7 +267,7 @@ class Test501GameLogic(unittest.TestCase):
                    Event(EventType.NUMBER, 1),
                    Event(EventType.ACTION, Action.CONFIRM)
                ]
-         game = game_logic.Game501(1, TestingPoller(evs), testing_renderer())
+         game = game_logic.Game501(1, TestingPoller(evs), RENDERER)
          self.assertEqual(game._Game501__points_to_string(), "501")
          game.loop()
          self.assertEqual(game._Game501__points_to_string(), "500")
@@ -297,7 +277,7 @@ class Test501GameLogic(unittest.TestCase):
                    Event(EventType.NUMBER, 1),
                    Event(EventType.ACTION, Action.CONFIRM)
                ] * 3
-         game = game_logic.Game501(1, TestingPoller(evs), testing_renderer())
+         game = game_logic.Game501(1, TestingPoller(evs), RENDERER)
          self.assertEqual(game._Game501__points_to_string(), "501")
          game.loop()
          self.assertEqual(game._Game501__points_to_string(), "498")
@@ -311,7 +291,7 @@ class Test501GameLogic(unittest.TestCase):
                    Event(EventType.NUMBER, 2),
                    Event(EventType.ACTION, Action.CONFIRM)
                 ] * 3
-         game = game_logic.Game501(2, TestingPoller(evs), testing_renderer())
+         game = game_logic.Game501(2, TestingPoller(evs), RENDERER)
          self.assertEqual(game._Game501__points_to_string(), "501 501")
          game.loop()
          self.assertEqual(game._Game501__points_to_string(), "498 495")
@@ -323,7 +303,7 @@ class Test501GameLogic(unittest.TestCase):
                       Event(EventType.NUMBER, i),
                       Event(EventType.ACTION, Action.CONFIRM)
                    ] * 3
-         game = game_logic.Game501(3, TestingPoller(evs), testing_renderer())
+         game = game_logic.Game501(3, TestingPoller(evs), RENDERER)
          self.assertEqual(game._Game501__points_to_string(), "501 501")
          game.loop()
          self.assertEqual(game._Game501__points_to_string(), "498 495")
@@ -336,7 +316,7 @@ class Test501GameLogic(unittest.TestCase):
                       Event(EventType.NUMBER, i),
                       Event(EventType.ACTION, Action.CONFIRM)
                    ] * 3
-         game = game_logic.Game501(3, TestingPoller(evs), testing_renderer())
+         game = game_logic.Game501(3, TestingPoller(evs), RENDERER)
          self.assertEqual(game._Game501__points_to_string(), "501 501")
          game.loop()
          self.assertEqual(game._Game501__points_to_string(), "501")
@@ -349,7 +329,7 @@ class Test501GameLogic(unittest.TestCase):
                       Event(EventType.NUMBER, i),
                       Event(EventType.ACTION, Action.CONFIRM)
                    ] * 3
-         game = game_logic.Game501(4, TestingPoller(evs), testing_renderer())
+         game = game_logic.Game501(4, TestingPoller(evs), RENDERER)
          self.assertEqual(game._Game501__points_to_string(), "501 501")
          game.loop()
          self.assertEqual(game._Game501__points_to_string(), "498 495")
@@ -361,21 +341,10 @@ class Test501GameLogic(unittest.TestCase):
                   Event(EventType.ACTION, Action.CONFIRM),
                   Event(EventType.ACTION, Action.RESTART)
               ]
-        game = game_logic.Game501(1, TestingPoller(evs), testing_renderer())
+        game = game_logic.Game501(1, TestingPoller(evs), RENDERER)
         self.assertFalse(game.over())
         game.loop()
         self.assertTrue(game.over())
-
-    def test_undo_display_text(self):
-        evs = [
-                  Event(EventType.NUMBER, 2),
-                  Event(EventType.NUMBER, 0),
-                  Event(EventType.ACTION, Action.CONFIRM),
-                  Event(EventType.ACTION, Action.UNDO)
-              ]
-        game = game_logic.Game501(1, TestingPoller(evs), testing_renderer())
-        game.loop()
-        self.assertEqual(game.renderer.current_display_score, "  0 " * 3)
 
     def test_undo_game_logic(self):
         evs = [
@@ -384,7 +353,7 @@ class Test501GameLogic(unittest.TestCase):
                   Event(EventType.ACTION, Action.CONFIRM),
                   Event(EventType.ACTION, Action.UNDO)
               ]
-        game = game_logic.Game501(1, TestingPoller(evs), testing_renderer())
+        game = game_logic.Game501(1, TestingPoller(evs), RENDERER)
         game.loop()
         self.assertEqual(game.players[0], 501)
 
@@ -395,7 +364,7 @@ class Test501GameLogic(unittest.TestCase):
                   Event(EventType.ACTION, Action.CONFIRM),
                   Event(EventType.ACTION, Action.UNDO)
               ]
-        game = game_logic.Game501(1, TestingPoller(evs), testing_renderer())
+        game = game_logic.Game501(1, TestingPoller(evs), RENDERER)
         game.loop()
         self.assertEqual(game._Game501__points_to_string(), "501")
 
@@ -406,7 +375,7 @@ class Test501GameLogic(unittest.TestCase):
                   Event(EventType.ACTION, Action.CONFIRM),
               ] * 3 * 7 * 2 # 3 throws per round, seven rounds so that
                             # score is below 100 and there are two players
-        game = game_logic.Game501(2, TestingPoller(evs), testing_renderer())
+        game = game_logic.Game501(2, TestingPoller(evs), RENDERER)
         game.loop()
         self.assertEqual(game._Game501__points_to_string(), "81  " + "81")
 
@@ -416,7 +385,7 @@ class Test501GameLogic(unittest.TestCase):
                   Event(EventType.NUMBER, 0),
                   Event(EventType.ACTION, Action.CONFIRM),
               ] * ( 3 * 7 * 2 - 1)
-        game = game_logic.Game501(2, TestingPoller(evs), testing_renderer())
+        game = game_logic.Game501(2, TestingPoller(evs), RENDERER)
         game.loop()
         self.assertEqual(game._Game501__points_to_string(), "81  " + "101")
 

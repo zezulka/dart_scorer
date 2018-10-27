@@ -1,7 +1,8 @@
 import unittest
 
 from test_common import *
-from game_logic import Renderer
+from input_controller import Event, EventType, Action
+from game_logic import Cricket
 
 class TestCricket(unittest.TestCase):
     def test_game_over(self):
@@ -10,5 +11,5 @@ class TestCricket(unittest.TestCase):
                    Event(EventType.NUMBER, 0),
                    Event(EventType.ACTION, Action.CONFIRM),
                ]
-         game = game_logic.Cricket(1, TestingPoller(evs * 6), testing_renderer())
+         game = Cricket(1, TestingPoller(evs * 6), RENDERER)
          self.assertFalse(game.over())

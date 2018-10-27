@@ -32,12 +32,13 @@ class Position(IntEnum):
     FIRST = 0
     SECOND = 1
     THIRD = 2
+    OVER = 3
 
     # https://docs.python.org/3/reference/datamodel.html#special-method-names
     # += operator
     def __add__(self, other):
-        other = other % 3
-        return self.__from_int((other + self.value) % 3)
+        other = other % 4
+        return self.__from_int((other + self.value) % 4)
 
     def __from_int(self, i):
         if i == 0:
@@ -46,6 +47,8 @@ class Position(IntEnum):
             return Position.SECOND
         elif i == 2:
             return Position.THIRD
+        elif i == 3:
+            return Position.OVER
         raise ValueError("The integer passed must be in {0,1,2}.")
 
     def to_int(self):
@@ -65,6 +68,12 @@ class GameRound:
     def current_position_int(self):
         return self.__current_position.value
 
+    def is_first_throw(self):
+        return self.__current_position == Position.FIRST
+
+    def is_over(self):
+        return self.__current_position == Position.OVER
+
     def hop_to_next_position(self):
         self.__current_position += 1
 
@@ -74,36 +83,41 @@ class GameRound:
     def set_current_throw(self, throw):
         self.__throws[self.__current_position] = throw
 
-    def points(self):
-        return reduce(lambda acc, next_: acc + next_.points,
-                      filter(lambda throw: throw is not None, self.__throws), 0)
+    def to_string(self):
+        result = ""
+        for throw in self.__throws:
+            result += "{:3}".format(throw.points) + throw.multiplier.to_string()
+        return result
 
-def get_user_config(renderer, input_ctrl):
+    def points(self):
+        """ Returns number of points which were scored for the given game round and were confirmed by the player. """
+        return reduce(lambda acc, next_: acc + next_.points, self.__throws[:self.__current_position.to_int()], 0)
+
+def get_user_config(output_ctrl, input_ctrl):
     num_players = -1
     game_type = None
     first_line = "no. players:"
-    renderer.prompt_text_first_line(first_line)
+    output_ctrl.lcd_set_first_line(first_line)
     num_players = input_ctrl.wait_for_next_number()
     first_line += " " + str(num_players)
-    renderer.prompt_text_first_line(first_line)
+    output_ctrl.lcd_set_first_line(first_line)
 
     second_line = "game type:"
-    renderer.prompt_text_second_line(second_line)
+    output_ctrl.lcd_set_second_line(second_line)
     game_id = input_ctrl.wait_for_next_number()
     game_type = GameType(game_id)
     second_line += " " + game_type.name
-    renderer.prompt_text_second_line(second_line, 0.50)
-    renderer.empty_lcd()
+    output_ctrl.lcd_set_second_line(second_line, 0.50)
     return UserConfig(num_players, game_type)
 
 def game_factory():
     input_ctrl = input_controller.EventPoller()
-    renderer = Renderer(DisplayController())
-    user_config = get_user_config(renderer, input_ctrl)
+    output_ctrl = DisplayController()
+    user_config = get_user_config(output_ctrl, input_ctrl)
     if user_config.game_type == GameType.X01:
-        return Game501(user_config.num_players, input_ctrl, renderer)
+        return Game501(user_config.num_players, input_ctrl, output_ctrl)
     elif user_config.game_type == GameType.Cricket:
-        return Cricket(user_config.num_players, input_ctrl, renderer)
+        return Cricket(user_config.num_players, input_ctrl, output_ctrl)
     else:
         raise ValueError("Not supported yet.")
 
@@ -128,6 +142,9 @@ def lcd_set_line(set_fun, text, duration):
         set_fun("")
 
 class DisplayController:
+    """ Class used for controlling output devices used in the game.
+ This class shouldn't be used in tests since it is dependent on
+ modules which directly work with physical displays. """
     def __init__(self):
         # We want to be able to run tests (HW dependless) everywhere
         import lcd_display
@@ -144,48 +161,20 @@ class DisplayController:
     def lcd_set_second_line(self, text, duration=-1.0):
         lcd_set_line(self.lcd_d.second_line, text, duration)
 
+    def warning(self, text):
+        """ Just a simple shortcut to displaying a message to the
+second row of the LCD display which will disapear after a given
+magic time constant."""
+        self.lcd_set_second_line(text, 0.75)
+
     def clean_up(self):
         self.lcd_d.clean_up()
         self.segment_d.clean_up()
 
-class Renderer:
-    def __init__(self, displ_ctrl):
-        self.__init_display_score = "  0 " * 3
-        self.current_display_score = self.__init_display_score
-        self.displ_ctrl = displ_ctrl
-
-    def prompt_text_first_line(self, text):
-        self.displ_ctrl.lcd_set_first_line(text)
-
-    def prompt_text_second_line(self, text, duration=-1.0):
-        self.displ_ctrl.lcd_set_second_line(text, duration)
-
-    def clear_lcd(self):
-        self.current_display_score = self.__init_display_score
-        self.score()
-
-    def empty_lcd(self):
-        self.displ_ctrl.lcd_set_first_line("")
-        self.displ_ctrl.lcd_set_second_line("")
-        self.current_display_score = self.__init_display_score
-
-    def clean_up(self):
-        self.displ_ctrl.clean_up()
-
-    def points(self, points):
-        self.displ_ctrl.segment_set_text(str(points))
-
-    def score(self):
-        self.displ_ctrl.lcd_set_first_line(self.current_display_score)
-
-    def warning(self, text):
-        warning_duration = 0.75
-        self.displ_ctrl.lcd_set_second_line(text, warning_duration)
-
 class Game(metaclass=ABCMeta):
-    def __init__(self, num_players, input_ctrl, renderer):
+    def __init__(self, num_players, input_ctrl, output_ctrl):
         self.round = GameRound()
-        self.renderer = renderer
+        self.output_ctrl = output_ctrl
         self.input_ctrl = input_ctrl
         self.num_players = num_players
         self.current_player = 0
@@ -195,9 +184,13 @@ class Game(metaclass=ABCMeta):
         return self
 
     def __exit__(self, _type, _value, _tb):
-        self.renderer.clean_up()
+        self.output_ctrl.clean_up()
 
     def loop(self):
+        """ Runs a game loop until the game is over. First, output devices
+are refreshed with new game data and then the game waits for new events.
+Game ends whether the self.over() returns True or there are no more other
+events. """
         while not self.over():
             self.refresh()
             next_event = self.input_ctrl.next_event()
@@ -216,14 +209,19 @@ new information is displayed on the output devices (usually a set of displays)."
 
     @abstractmethod
     def over(self):
+        """ Returns a boolean value. True if the game is over, false otherwise."""
         pass
 
     @abstractmethod
     def digit_submitted(self, _):
+        """ This method takes a digit as its input and modifies internal state of the
+game object according to the game rules and the digit itself."""
         pass
 
     @abstractmethod
     def action_submitted(self, _):
+        """ This method takes an action as its input and modifies internal state of the
+game object according to the game rules and the action itself."""
         pass
 
 def cricket_init():
@@ -232,8 +230,8 @@ def cricket_init():
     return [result]
 
 class Cricket(Game):
-    def __init__(self, num_players, input_ctrl, renderer):
-        super().__init__(num_players, input_ctrl, renderer)
+    def __init__(self, num_players, input_ctrl, output_ctrl):
+        super().__init__(num_players, input_ctrl, output_ctrl)
         self.players = cricket_init() * num_players
 
     def over(self):
@@ -252,8 +250,8 @@ class Cricket(Game):
 
 class Game501(Game):
 
-    def __init__(self, num_players, input_ctrl, renderer):
-        super().__init__(num_players, input_ctrl, renderer)
+    def __init__(self, num_players, input_ctrl, output_ctrl):
+        super().__init__(num_players, input_ctrl, output_ctrl)
         self.players = [501] * num_players
 
     def over(self):
@@ -261,8 +259,8 @@ class Game501(Game):
 
     def refresh(self):
         self.__highlight_current_throw()
-        self.renderer.score()
-        self.renderer.points(self.__points_to_string())
+        self.output_ctrl.lcd_set_first_line(self.__game_round_to_string())
+        self.output_ctrl.segment_set_text(self.__points_to_string())
 
     def action_submitted(self, action):
         points_nominal = self.round.current_throw().points
@@ -270,84 +268,66 @@ class Game501(Game):
             self.round.set_current_throw(Throw(points_nominal, Multiplier.DOUBLE))
         elif action == input_controller.Action.TRIPLE:
             if points_nominal == 25:
-                self.renderer.warning("25T not valid!")
+                self.output_ctrl.warning("25T not valid!")
             else:
                 self.round.set_current_throw(Throw(points_nominal, Multiplier.TRIPLE))
         elif action == input_controller.Action.CONFIRM:
+            self.round.hop_to_next_position()
             curr_pts = curr_pts = self.players[self.current_player] - self.round.points()
             if curr_pts < 0:
-                self.renderer.warning("Overthrow!")
-            self.round.hop_to_next_position()
-            if self.round.current_position_int() == 1 or curr_pts <= 0:
+                self.output_ctrl.warning("Overthrow!")
+            if curr_pts < 0 or self.round.is_over():
                 self.__next_round()
         elif action == input_controller.Action.CLEAR:
             self.round.set_current_throw(zero_throw())
         elif action == input_controller.Action.RESTART:
             self.force_quit = True
         elif action == input_controller.Action.UNDO and\
-             self.round.current_position_int() != Position.FIRST:
-            self.round.hop_to_next_position() # 2 is congruent to -1 (mod 3)
+             not self.round.is_first_throw():
+            self.round.hop_to_next_position() # 3 is congruent to -1 (mod 4)
+            self.round.hop_to_next_position()
             self.round.hop_to_next_position()
             self.round.set_current_throw(zero_throw())
 
     def digit_submitted(self, digit):
-        digit = digit
         throw = self.round.current_throw()
         points_nominal = throw.points
         multiplier = throw.multiplier
         if points_nominal == 0:
             self.round.set_current_throw(Throw(digit, multiplier))
         elif points_nominal == 1:
-            self.round.set_current_throw(Throw(points_nominal * 10 + digit, multiplier))
+            self.round.set_current_throw(Throw(10 + digit, multiplier))
         elif points_nominal == 2:
-            points_cand = points_nominal * 10 + digit
+            points_cand = 20 + digit
             if digit == 0 or (digit == 5 and multiplier != Multiplier.TRIPLE):
                 self.round.set_current_throw(Throw(points_cand, multiplier))
             else:
-                self.renderer.warning(str(points_cand) + multiplier.to_string() + " not valid!")
+                self.output_ctrl.warning(str(points_cand) + multiplier.to_string() + " not valid!")
         else:
-            self.renderer.warning("hit <-")
+            self.output_ctrl.warning("hit <-")
+
+    def __game_round_to_string(self):
+        """ Returns a string representation of the current game round. In the case of X01,
+ we show the player nominal value of each throw."""
+        return self.round.to_string()
 
     def __next_round(self):
         curr_pts = self.players[self.current_player] - self.round.points()
         if curr_pts >= 0:
             self.players[self.current_player] = curr_pts
-        self.renderer.clear_lcd()
         self.current_player = (self.current_player + 1) % self.num_players
         self.round.clear()
-
-    def __score_for_current_throw(self):
-        """Returns a string of length 4 representing the current throw. This string
-will then be represented to the user. Structrute of the string is defined as follows:
-    at the last position, there will be a multiplier (empty space indicates single,
-    D stands for double and T stands for triple) which will be preceded by a valid
-    number (also in the context of the multiplier, i.e. no " 25T") padded by a
-    sequence of spaces from the left.
-
-Examples of valid strings:
-"  0T"
-" 20 "
-" 19D"
-"  1 "
-
-Examples of illegal strings:
-"    "
-" 200"
-" 1  "
-"   D"
-"12D "
-"""
-        throw = self.round.current_throw()
-        return "{:3}".format(throw.points) + throw.multiplier.to_string()
 
     def __highlight_current_throw(self):
         no = self.round.current_position_int() * 4
         aux_str = "####" + " " * 8
         aux_str = aux_str[-no:] + aux_str[:-no]
-        self.renderer.prompt_text_second_line(aux_str)
+        self.output_ctrl.lcd_set_second_line(aux_str)
 
     def __points_to_string(self):
-        """ Returns a string representation of the score for the current player."""
+        """ Returns a string representation of the score. Since the segment display has got
+ limited display capacity, score of only two most recent players (starting with a player
+ whose index in the player array is even) is diplayed. """
         curr_points = str(self.players[self.current_player] - self.round.points())
         if self.num_players == 1:
             return curr_points
