@@ -3,7 +3,7 @@ from time import sleep
 from enum import IntEnum, Enum, unique
 from abc import ABCMeta, abstractmethod
 
-from src.input import input_controller
+from ..input import input_controller
 
 MULT_TO_STR = {1: " ", 2: "D", 3: "T"}
 
@@ -158,8 +158,8 @@ class DisplayController:
 
     def __init__(self):
         # We want to be able to run tests (HW dependless) everywhere
-        from src.display import segment
-        from src.display import lcd
+        from ..display import segment
+        from ..display import lcd
         self.segment_d = segment.MAX7219()
         self.lcd_d = lcd.LcdDisplay()
 

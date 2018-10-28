@@ -1,8 +1,8 @@
 import unittest
 
 from test_common import *
-from src.input.input_controller import Event, EventType, Action
-from src.logic.game_logic import Cricket
+from dartscorer.input.input_controller import Event, EventType, Action
+from dartscorer.logic.game_logic import Cricket
 
 
 class TestCricket(unittest.TestCase):

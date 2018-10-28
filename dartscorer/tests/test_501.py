@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 import unittest
-from src.logic import game_logic
+from dartscorer.logic import game_logic
 from test_common import *
 from queue import Queue
-from src.input.input_controller import Event, EventType, Action
+from dartscorer.input.input_controller import Event, EventType, Action
 
 # In testing, this should be no-op since
 # the real implementation only directly controls
