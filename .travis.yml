@@ -1,5 +1,12 @@
 sudo: false
 language: python
+
+matrix:
+  include:
+    #https://github.com/ansible/ansible/issues/23642#issuecomment-297778256
+    - python: 3.6
+      env : PYBIN=/home/travis/virtualenv/python3.6.1/bin/python3.6
+
 addons:
   apt:
     packages:
