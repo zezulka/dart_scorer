@@ -12,6 +12,6 @@ addons:
     packages:
       - "python3-pip"
 before_script:
-  - pip3 install --user evdev
+  - pip3 install evdev
 script:
   - ./bin/test.py
