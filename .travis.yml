@@ -14,4 +14,4 @@ addons:
 before_script:
   - pip3 install evdev
 script:
-  - ./bin/test.py
+  - ./bin/test.sh

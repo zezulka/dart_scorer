@@ -1,8 +1,8 @@
 import unittest
 
-from test_common import *
+from dartscorer.tests.test_common import *
 from dartscorer.input.input_controller import Event, EventType, Action
-from dartscorer.logic.game_logic import Cricket
+from dartscorer.logic.cricket import Cricket
 
 
 class TestCricket(unittest.TestCase):

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import unittest
-from dartscorer.logic import game_logic
+from dartscorer.logic import common
 from test_common import *
 from queue import Queue
 from dartscorer.input.input_controller import Event, EventType, Action
@@ -9,6 +9,9 @@ from dartscorer.input.input_controller import Event, EventType, Action
 # the real implementation only directly controls
 # displays.
 # TODO: might add debug messages instead of only calling 'pass'es.
+from dartscorer.tests.test_common import RENDERER
+from dartscorer.logic.game_x01 import Game501
+
 
 class TestingDisplayController:
     def __init__(self):
@@ -53,7 +56,7 @@ class Test501GameLogic(unittest.TestCase):
             Event(EventType.NUMBER, 0),
             Event(EventType.ACTION, Action.CONFIRM)
         ]
-        game = game_logic.Game501(1, TestingPoller(evs), RENDERER)
+        game = Game501(1, TestingPoller(evs), RENDERER)
         self.assertEqual(game.players[0], 501)
         game.loop()
         # Points are ONLY subtracted iff the round is over.
@@ -65,7 +68,7 @@ class Test501GameLogic(unittest.TestCase):
             Event(EventType.NUMBER, 0),
             Event(EventType.ACTION, Action.CONFIRM),
         ]
-        game = game_logic.Game501(1, TestingPoller(evs * 6), RENDERER)
+        game = Game501(1, TestingPoller(evs * 6), RENDERER)
         self.assertEqual(game.players[0], 501)
         game.loop()
         self.assertEqual(game.players[0], 441)
@@ -97,7 +100,7 @@ class Test501GameLogic(unittest.TestCase):
             Event(EventType.ACTION, Action.DOUBLE),
             Event(EventType.ACTION, Action.CONFIRM)
         ]
-        game = game_logic.Game501(1, TestingPoller(evs), RENDERER)
+        game = Game501(1, TestingPoller(evs), RENDERER)
         self.assertEqual(game.players[0], 501)
         game.loop()
         self.assertEqual(game.players[0], 0)
@@ -132,7 +135,7 @@ class Test501GameLogic(unittest.TestCase):
             Event(EventType.ACTION, Action.DOUBLE),
             Event(EventType.ACTION, Action.CONFIRM)
         ]
-        game = game_logic.Game501(1, TestingPoller(evs), RENDERER)
+        game = Game501(1, TestingPoller(evs), RENDERER)
         self.assertEqual(game.players[0], 501)
         game.loop()
         self.assertEqual(game.players[0], 0)
@@ -170,7 +173,7 @@ class Test501GameLogic(unittest.TestCase):
             Event(EventType.ACTION, Action.DOUBLE),
             Event(EventType.ACTION, Action.CONFIRM)
         ]
-        game = game_logic.Game501(1, TestingPoller(evs), RENDERER)
+        game = Game501(1, TestingPoller(evs), RENDERER)
         self.assertEqual(game.players[0], 501)
         game.loop()
         self.assertEqual(game.players[0], 0)
@@ -183,7 +186,7 @@ class Test501GameLogic(unittest.TestCase):
                   Event(EventType.ACTION, Action.TRIPLE),
                   Event(EventType.ACTION, Action.CONFIRM)
               ] * 9
-        game = game_logic.Game501(1, TestingPoller(evs), RENDERER)
+        game = Game501(1, TestingPoller(evs), RENDERER)
         self.assertEqual(game.players[0], 501)
         game.loop()
         self.assertEqual(game.players[0], 501 - 3 * 20 * 6)
@@ -202,7 +205,7 @@ class Test501GameLogic(unittest.TestCase):
             Event(EventType.NUMBER, 6),
             Event(EventType.ACTION, Action.CONFIRM)
         ]
-        game = game_logic.Game501(1, TestingPoller(evs), RENDERER)
+        game = Game501(1, TestingPoller(evs), RENDERER)
         self.assertEqual(game.players[0], 501)
         game.loop()
         self.assertEqual(game.players[0], 501 - 3 * 18 * 9)
@@ -224,7 +227,7 @@ class Test501GameLogic(unittest.TestCase):
             Event(EventType.NUMBER, 2),
             Event(EventType.ACTION, Action.CONFIRM)
         ]
-        game = game_logic.Game501(1, TestingPoller(evs), RENDERER)
+        game = Game501(1, TestingPoller(evs), RENDERER)
         self.assertEqual(game.players[0], 501)
         game.loop()
         self.assertEqual(game.players[0], 501 - 3 * 18 * 9)
@@ -240,7 +243,7 @@ class Test501GameLogic(unittest.TestCase):
             Event(EventType.ACTION, Action.CONFIRM),
             Event(EventType.ACTION, Action.CONFIRM)
         ]
-        game = game_logic.Game501(1, TestingPoller(evs), RENDERER)
+        game = Game501(1, TestingPoller(evs), RENDERER)
         self.assertEqual(game.players[0], 501)
         game.loop()
         # Note: the first throw will be "25" since the intermediate result is not erased
@@ -258,7 +261,7 @@ class Test501GameLogic(unittest.TestCase):
             Event(EventType.ACTION, Action.CONFIRM),
             Event(EventType.ACTION, Action.CONFIRM)
         ]
-        game = game_logic.Game501(1, TestingPoller(evs), RENDERER)
+        game = Game501(1, TestingPoller(evs), RENDERER)
         self.assertEqual(game.players[0], 501)
         game.loop()
         # Note: the first throw will be "2" since the intermediate result is not erased
@@ -270,7 +273,7 @@ class Test501GameLogic(unittest.TestCase):
             Event(EventType.NUMBER, 1),
             Event(EventType.ACTION, Action.CONFIRM)
         ]
-        game = game_logic.Game501(1, TestingPoller(evs), RENDERER)
+        game = Game501(1, TestingPoller(evs), RENDERER)
         self.assertEqual(game._Game501__points_to_string(), "501")
         game.loop()
         self.assertEqual(game._Game501__points_to_string(), "500")
@@ -280,7 +283,7 @@ class Test501GameLogic(unittest.TestCase):
                   Event(EventType.NUMBER, 1),
                   Event(EventType.ACTION, Action.CONFIRM)
               ] * 3
-        game = game_logic.Game501(1, TestingPoller(evs), RENDERER)
+        game = Game501(1, TestingPoller(evs), RENDERER)
         self.assertEqual(game._Game501__points_to_string(), "501")
         game.loop()
         self.assertEqual(game._Game501__points_to_string(), "498")
@@ -294,7 +297,7 @@ class Test501GameLogic(unittest.TestCase):
                    Event(EventType.NUMBER, 2),
                    Event(EventType.ACTION, Action.CONFIRM)
                ] * 3
-        game = game_logic.Game501(2, TestingPoller(evs), RENDERER)
+        game = Game501(2, TestingPoller(evs), RENDERER)
         self.assertEqual(game._Game501__points_to_string(), "501 501")
         game.loop()
         self.assertEqual(game._Game501__points_to_string(), "498 495")
@@ -306,7 +309,7 @@ class Test501GameLogic(unittest.TestCase):
                        Event(EventType.NUMBER, i),
                        Event(EventType.ACTION, Action.CONFIRM)
                    ] * 3
-        game = game_logic.Game501(3, TestingPoller(evs), RENDERER)
+        game = Game501(3, TestingPoller(evs), RENDERER)
         self.assertEqual(game._Game501__points_to_string(), "501 501")
         game.loop()
         self.assertEqual(game._Game501__points_to_string(), "498 495")
@@ -319,7 +322,7 @@ class Test501GameLogic(unittest.TestCase):
                        Event(EventType.NUMBER, i),
                        Event(EventType.ACTION, Action.CONFIRM)
                    ] * 3
-        game = game_logic.Game501(3, TestingPoller(evs), RENDERER)
+        game = Game501(3, TestingPoller(evs), RENDERER)
         self.assertEqual(game._Game501__points_to_string(), "501 501")
         game.loop()
         self.assertEqual(game._Game501__points_to_string(), "501")
@@ -332,7 +335,7 @@ class Test501GameLogic(unittest.TestCase):
                        Event(EventType.NUMBER, i),
                        Event(EventType.ACTION, Action.CONFIRM)
                    ] * 3
-        game = game_logic.Game501(4, TestingPoller(evs), RENDERER)
+        game = Game501(4, TestingPoller(evs), RENDERER)
         self.assertEqual(game._Game501__points_to_string(), "501 501")
         game.loop()
         self.assertEqual(game._Game501__points_to_string(), "498 495")
@@ -344,7 +347,7 @@ class Test501GameLogic(unittest.TestCase):
             Event(EventType.ACTION, Action.CONFIRM),
             Event(EventType.ACTION, Action.RESTART)
         ]
-        game = game_logic.Game501(1, TestingPoller(evs), RENDERER)
+        game = Game501(1, TestingPoller(evs), RENDERER)
         self.assertFalse(game.over())
         game.loop()
         self.assertTrue(game.over())
@@ -356,7 +359,7 @@ class Test501GameLogic(unittest.TestCase):
             Event(EventType.ACTION, Action.CONFIRM),
             Event(EventType.ACTION, Action.UNDO)
         ]
-        game = game_logic.Game501(1, TestingPoller(evs), RENDERER)
+        game = Game501(1, TestingPoller(evs), RENDERER)
         game.loop()
         self.assertEqual(game.players[0], 501)
 
@@ -367,7 +370,7 @@ class Test501GameLogic(unittest.TestCase):
             Event(EventType.ACTION, Action.CONFIRM),
             Event(EventType.ACTION, Action.UNDO)
         ]
-        game = game_logic.Game501(1, TestingPoller(evs), RENDERER)
+        game = Game501(1, TestingPoller(evs), RENDERER)
         game.loop()
         self.assertEqual(game._Game501__points_to_string(), "501")
 
@@ -378,7 +381,7 @@ class Test501GameLogic(unittest.TestCase):
                   Event(EventType.ACTION, Action.CONFIRM),
               ] * 3 * 7 * 2  # 3 throws per round, seven rounds so that
         # score is below 100 and there are two players
-        game = game_logic.Game501(2, TestingPoller(evs), RENDERER)
+        game = Game501(2, TestingPoller(evs), RENDERER)
         game.loop()
         self.assertEqual(game._Game501__points_to_string(), "81  " + "81")
 
@@ -388,16 +391,16 @@ class Test501GameLogic(unittest.TestCase):
                   Event(EventType.NUMBER, 0),
                   Event(EventType.ACTION, Action.CONFIRM),
               ] * (3 * 7 * 2 - 1)
-        game = game_logic.Game501(2, TestingPoller(evs), RENDERER)
+        game = Game501(2, TestingPoller(evs), RENDERER)
         game.loop()
         self.assertEqual(game._Game501__points_to_string(), "81  " + "101")
 
 
 class TestPosition(unittest.TestCase):
     def test_add(self):
-        second = game_logic.Position.FIRST
+        second = common.Position.FIRST
         second += 1
-        self.assertEqual(game_logic.Position.SECOND, second)
+        self.assertEqual(common.Position.SECOND, second)
 
 
 if __name__ == "__main__":
