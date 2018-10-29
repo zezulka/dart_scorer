@@ -42,20 +42,6 @@ except from printing out the current state of its virtual 'displays' to a file."
             self.lcd_first_line, self.segment_text, self.lcd_second_line) + "=-" * 15
 
 
-def make_sure_output_dir_exists():
-    dirname = Path("./test_output")
-    dirname.mkdir(parents=True, exist_ok=True)
-
-
-def testing_renderer():
-    make_sure_output_dir_exists()
-    return TestingDisplayController(open(os.path.join("./test_output",
-                                                      time.strftime("%Y%m%d-%H%M%S")) + ".txt", "a"))
-
-
-RENDERER = testing_renderer()
-
-
 class TestingPoller:
     def __init__(self, event_array):
         self.event_queue = Queue()
@@ -69,3 +55,17 @@ class TestingPoller:
         if self.event_queue.empty():
             return None
         return self.event_queue.get()
+
+
+def make_sure_output_dir_exists():
+    dirname = Path("./test_output")
+    dirname.mkdir(parents=True, exist_ok=True)
+
+
+def testing_renderer():
+    make_sure_output_dir_exists()
+    return TestingDisplayController(open(os.path.join("./test_output",
+                                                      time.strftime("%Y%m%d-%H%M%S")) + ".txt", "a"))
+
+
+RENDERER = testing_renderer()

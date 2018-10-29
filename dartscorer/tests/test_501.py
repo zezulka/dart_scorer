@@ -9,40 +9,8 @@ from dartscorer.input.input_controller import Event, EventType, Action
 # the real implementation only directly controls
 # displays.
 # TODO: might add debug messages instead of only calling 'pass'es.
-from dartscorer.tests.test_common import RENDERER
+from dartscorer.tests.test_common import RENDERER, TestingPoller
 from dartscorer.logic.game_x01 import Game501
-
-
-class TestingDisplayController:
-    def __init__(self):
-        pass
-
-    def segment_set_text(self, _):
-        pass
-
-    def lcd_set_first_line(self, _, _d=None):
-        pass
-
-    def lcd_set_second_line(self, _, _d=None):
-        pass
-
-    def clean_up(self):
-        pass
-
-
-class TestingPoller:
-    def __init__(self, event_array):
-        self.event_queue = Queue()
-        self.__fill_queue(event_array)
-
-    def __fill_queue(self, event_array):
-        for event in event_array:
-            self.event_queue.put(event)
-
-    def next_event(self):
-        if self.event_queue.empty():
-            return None
-        return self.event_queue.get()
 
 
 class Test501GameLogic(unittest.TestCase):

@@ -45,23 +45,6 @@ class Game501(Game):
             self.round.hop_to_next_position()
             self.round.set_current_throw(zero_throw())
 
-    def digit_submitted(self, digit):
-        throw = self.round.current_throw()
-        points_nominal = throw.points
-        multiplier = throw.multiplier
-        if points_nominal == 0:
-            self.round.set_current_throw(Throw(digit, multiplier))
-        elif points_nominal == 1:
-            self.round.set_current_throw(Throw(10 + digit, multiplier))
-        elif points_nominal == 2:
-            points_cand = 20 + digit
-            if digit == 0 or (digit == 5 and multiplier != Multiplier.TRIPLE):
-                self.round.set_current_throw(Throw(points_cand, multiplier))
-            else:
-                self.output_ctrl.warning(str(points_cand) + multiplier.to_string() + " not valid!")
-        else:
-            self.output_ctrl.warning("hit <-")
-
     def __game_round_to_string(self):
         """ Returns a string representation of the current game round. In the case of X01,
  we show the player nominal value of each throw."""
