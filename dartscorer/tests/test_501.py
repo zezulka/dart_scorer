@@ -8,7 +8,6 @@ from dartscorer.input.input_controller import Event, EventType, Action
 # In testing, this should be no-op since
 # the real implementation only directly controls
 # displays.
-# TODO: might add debug messages instead of only calling 'pass'es.
 from dartscorer.tests.test_common import RENDERER, TestingPoller
 from dartscorer.logic.game_x01 import Game501
 

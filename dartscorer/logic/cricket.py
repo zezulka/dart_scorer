@@ -20,7 +20,10 @@ class Cricket(Game):
                                                                        player.values(), True), self.players, False)
 
     def refresh(self):
-        pass
+        point_str = self.__points_to_string()
+        self.output_ctrl.lcd_set_first_line(point_str[0])
+        self.output_ctrl.lcd_set_second_line(point_str[1])
+        self.output_ctrl.segment_set_text(self.__game_round_to_string())
 
     def action_submitted(self, action):
         points_nominal = self.round.current_throw().points
@@ -35,8 +38,10 @@ class Cricket(Game):
             thrw = self.round.current_throw()
             (pts, mult) = (thrw.points, thrw.multiplier)
             if pts >= 15:
-                current_score = self.players[self.current_player][pts]
-                self.players[self.current_player][pts] = (current_score + mult) % 4
+                next_score = self.players[self.current_player][pts] + mult
+                if next_score > 3:
+                    next_score = 3
+                self.players[self.current_player][pts] = next_score
             self.round.hop_to_next_position()
             if self.round.is_over():
                 self.__next_round()
@@ -53,3 +58,21 @@ class Cricket(Game):
 
     def __next_round(self):
         self.round.clear()
+
+    def __points_to_string(self):
+        first = ""
+        second = ""
+        curr_player = self.players[self.current_player]
+        for key in curr_player:
+            first += "{}".format(key)
+            second += " {}".format(curr_player[key])
+            if key == 17 or key == 19:
+                first += "|"
+                second += "|"
+        return [first, second]
+
+    def __game_round_to_string(self):
+        curr_thrw = self.round.current_throw()
+        if curr_thrw.points == 0:
+            return ""
+        return str(curr_thrw.points) + curr_thrw.multiplier.to_string()

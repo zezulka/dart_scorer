@@ -121,30 +121,21 @@ class Game(metaclass=ABCMeta):
     def __exit__(self, _type, _value, _tb):
         self.output_ctrl.clean_up()
 
-    def loop(self):
-        """ Runs a game loop until the game is over. First, output devices
-are refreshed with new game data and then the game waits for new events.
-Game ends whether the self.over() returns True or there are no more other
-events. """
-        while not self.over():
-            self.refresh()
-            next_event = self.input_ctrl.next_event()
-            if not next_event:
-                return
-            if next_event.e_type == input_controller.EventType.NUMBER:
-                self.digit_submitted(next_event.value)
-            elif next_event.e_type == input_controller.EventType.ACTION:
-                self.action_submitted(next_event.value)
-
     @abstractmethod
     def refresh(self):
         """ At the beginning of each game cycle, this method is called so that
-new information is displayed on the output devices (usually a set of displays)."""
+new information is displayed to the output devices (usually a set of displays)."""
         pass
 
     @abstractmethod
     def over(self):
         """ Returns a boolean value. True if the game is over, false otherwise."""
+        pass
+
+    @abstractmethod
+    def action_submitted(self, _):
+        """ This method takes an action as its input and modifies internal state of the
+game object according to the game rules and the action itself."""
         pass
 
     def digit_submitted(self, digit):
@@ -167,8 +158,17 @@ game object according to the game rules and the digit itself."""
         else:
             self.output_ctrl.warning("hit <-")
 
-    @abstractmethod
-    def action_submitted(self, _):
-        """ This method takes an action as its input and modifies internal state of the
-game object according to the game rules and the action itself."""
-        pass
+    def loop(self):
+        """ Runs a game loop until the game is over. First, output devices
+are refreshed with new game data and then the game waits for new events.
+Game ends whether the self.over() returns True or there are no more other
+events. """
+        while not self.over():
+            self.refresh()
+            next_event = self.input_ctrl.next_event()
+            if not next_event:
+                return
+            if next_event.e_type == input_controller.EventType.NUMBER:
+                self.digit_submitted(next_event.value)
+            elif next_event.e_type == input_controller.EventType.ACTION:
+                self.action_submitted(next_event.value)
