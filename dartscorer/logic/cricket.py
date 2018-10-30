@@ -1,12 +1,16 @@
 from ..input.input_controller import Action
 from .common import Game, Throw, Multiplier, zero_throw
 from functools import reduce
+from collections import OrderedDict
 
 
 def cricket_score_init():
-    result = { i : 0 for i in range(15, 21)}
+    """
+    :return: Map ordered by keys. The map depicts the initial state of a cricket game.
+    """
+    result = {i: 0 for i in range(15, 21)}
     result[25] = 0
-    return result
+    return OrderedDict(sorted(result.items(), key=lambda t: t[0]))
 
 
 class Cricket(Game):
