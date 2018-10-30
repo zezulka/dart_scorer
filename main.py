@@ -1,4 +1,4 @@
-from dartscorer.logic.common import game_factory
+from dartscorer.logic.utils import game_factory
 
 
 def main():
