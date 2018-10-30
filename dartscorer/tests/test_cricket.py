@@ -29,6 +29,7 @@ class TestCricket(unittest.TestCase):
             Event(EventType.ACTION, Action.CONFIRM)
         ]
         game = Cricket(1, TestingPoller(evs), RENDERER)
+        str = RENDERER.to_string()
         expected = cricket_score_init()
         self.assertEqual(game.players[0], expected)
         game.loop()

@@ -27,19 +27,27 @@ except from printing out the current state of its virtual 'displays' to a file."
 
     def segment_set_text(self, text):
         self.segment_text = text
-        print(self.__to_string(), file=self.output_file)
+        print(self.__decorated_to_string(), file=self.output_file)
 
     def lcd_set_first_line(self, text, _duration=None):
         self.lcd_first_line = text
-        print(self.__to_string(), file=self.output_file)
+        print(self.__decorated_to_string(), file=self.output_file)
 
     def lcd_set_second_line(self, text, _duration=None):
         self.lcd_second_line = text
-        print(self.__to_string(), file=self.output_file)
+        print(self.__decorated_to_string(), file=self.output_file)
 
-    def __to_string(self):
-        return "=-" * 15 + "\nLCD[1]: {} \t\t\t SEGMENT: {}\nLCD[2]: {}\n".format(
-            self.lcd_first_line, self.segment_text, self.lcd_second_line) + "=-" * 15
+    def to_string(self):
+        if not self.lcd_first_line or not self.lcd_second_line or not self.segment_text:
+            return ""
+        return "LCD[1]: {} \t\t\t SEGMENT: {}\nLCD[2]: {}".format(
+            self.lcd_first_line, self.segment_text, self.lcd_second_line)
+
+    def __decorated_to_string(self):
+        raw = self.to_string()
+        if not raw:
+            return ""
+        return "=-" * 25 + "\n" + raw + "\n" + "-=" * 25
 
 
 class TestingPoller:
