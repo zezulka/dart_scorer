@@ -5,7 +5,7 @@ from typing import Dict
 
 from ..input import input_controller
 
-MULT_TO_STR: Dict[int, str] = {1: " ", 2: "D", 3: "T"}
+MULT_TO_STR = {1: " ", 2: "D", 3: "T"}
 
 
 class Multiplier(IntEnum):
