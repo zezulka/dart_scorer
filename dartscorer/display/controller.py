@@ -32,7 +32,7 @@ magic time constant."""
         self.lcd_d.clean_up()
         self.segment_d.clean_up()
 
-    def __lcd_set_line(set_fun, text, duration):
+    def __lcd_set_line(self, set_fun, text, duration):
         set_fun(text)
         if duration > 0:
             sleep(duration)
