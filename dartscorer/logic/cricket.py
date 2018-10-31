@@ -68,15 +68,19 @@ class Cricket(Game):
         second = ""
         curr_player = self.players[self.current_player]
         for key in curr_player:
+            displ_key = key
             thrown = curr_player[key]
             if thrown == 3:
-                key = ""
+                displ_key = ""
                 thrown = ""
-            first += "{:2}".format(key)
+            first += "{:2}".format(displ_key)
             second += "{:2}".format(thrown)
-            if key == 17 or key == 19:
-                first += "|"
-                second += "|"
+            # Just to separate the displayed numbers.
+            # We don't have that much space (16 cells)
+            #     but at least make an effort.
+            if key != 25 and (key == 17 or key == 19):
+                first += " "
+                second += " "
         return [first, second]
 
     def __game_round_to_string(self):
