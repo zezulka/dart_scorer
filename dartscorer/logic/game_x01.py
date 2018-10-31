@@ -4,11 +4,11 @@ from ..input.input_controller import Action
 from .common import Game, Multiplier, Throw, zero_throw
 
 
-class Game501(Game):
+class GameX01(Game):
 
-    def __init__(self, num_players, input_ctrl, output_ctrl):
+    def __init__(self, num_players, input_ctrl, output_ctrl, init_score=501):
         super().__init__(num_players, input_ctrl, output_ctrl)
-        self.players = [501] * num_players
+        self.players = [init_score] * num_players
 
     def over(self):
         return self.force_quit or reduce(lambda x, y: x or y == 0, self.players, False)

@@ -2,7 +2,7 @@ from ..logic.cricket import Cricket
 from ..display.controller import DisplayController
 from ..logic.common import GameType
 from ..input.input_controller import EventPoller
-from .game_x01 import Game501
+from .game_x01 import GameX01
 
 
 class UserConfig:
@@ -36,7 +36,7 @@ def game_factory():
     output_ctrl = DisplayController()
     user_config = get_user_config(output_ctrl, input_ctrl)
     if user_config.game_type == GameType.X01:
-        return Game501(user_config.num_players, input_ctrl, output_ctrl)
+        return GameX01(user_config.num_players, input_ctrl, output_ctrl)
     elif user_config.game_type == GameType.Cricket:
         return Cricket(user_config.num_players, input_ctrl, output_ctrl)
     else:

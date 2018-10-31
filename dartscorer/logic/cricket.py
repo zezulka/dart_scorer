@@ -68,8 +68,12 @@ class Cricket(Game):
         second = ""
         curr_player = self.players[self.current_player]
         for key in curr_player:
-            first += "{}".format(key)
-            second += " {}".format(curr_player[key])
+            thrown = curr_player[key]
+            if thrown == 3:
+                key = ""
+                thrown = ""
+            first += "{:2}".format(key)
+            second += "{:2}".format(thrown)
             if key == 17 or key == 19:
                 first += "|"
                 second += "|"
@@ -79,4 +83,4 @@ class Cricket(Game):
         curr_thrw = self.round.current_throw()
         if curr_thrw.points == 0:
             return ""
-        return str(curr_thrw.points) + curr_thrw.multiplier.to_string()
+        return str(curr_thrw.points) + curr_thrw.multiplier.to_string().lower()

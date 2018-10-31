@@ -29,7 +29,6 @@ class TestCricket(unittest.TestCase):
             Event(EventType.ACTION, Action.CONFIRM)
         ]
         game = Cricket(1, TestingPoller(evs), RENDERER)
-        str = RENDERER.to_string()
         expected = cricket_score_init()
         self.assertEqual(game.players[0], expected)
         game.loop()
@@ -98,3 +97,59 @@ class TestCricket(unittest.TestCase):
         game = Cricket(1, TestingPoller(evs), RENDERER)
         game.loop()
         self.assertTrue(game.over())
+
+    def test_score_display_double(self):
+        evs = [
+                  Event(EventType.NUMBER, 1),
+                  Event(EventType.NUMBER, 5),
+                  Event(EventType.ACTION, Action.DOUBLE)
+        ]
+        game = Cricket(1, TestingPoller(evs), RENDERER)
+        game.loop()
+        self.assertEqual("15d", RENDERER.segment_text)
+
+    def test_score_display_triple(self):
+        evs = [
+                  Event(EventType.NUMBER, 1),
+                  Event(EventType.NUMBER, 5),
+                  Event(EventType.ACTION, Action.TRIPLE)
+        ]
+        game = Cricket(1, TestingPoller(evs), RENDERER)
+        game.loop()
+        self.assertEqual("15t", RENDERER.segment_text)
+
+    def test_do_not_display_already_thrown_left_edge(self):
+        evs = [
+                  Event(EventType.NUMBER, 1),
+                  Event(EventType.NUMBER, 5),
+                  Event(EventType.ACTION, Action.TRIPLE),
+                  Event(EventType.ACTION, Action.CONFIRM)
+        ]
+        game = Cricket(1, TestingPoller(evs), RENDERER)
+        game.loop()
+        self.assertEqual("  1617|1819|2025", RENDERER.lcd_first_line)
+        self.assertEqual("   0 0| 0 0| 0 0", RENDERER.lcd_second_line)
+
+    def test_do_not_display_already_thrown_right_edge(self):
+        evs = [
+                  Event(EventType.NUMBER, 2),
+                  Event(EventType.NUMBER, 5),
+                  Event(EventType.ACTION, Action.DOUBLE),
+                  Event(EventType.ACTION, Action.CONFIRM)
+        ] * 2
+        game = Cricket(1, TestingPoller(evs), RENDERER)
+        game.loop()
+        self.assertEqual("151617|1819|20  ", RENDERER.lcd_first_line)
+        self.assertEqual(" 0 0 0| 0 0| 0  ", RENDERER.lcd_second_line)
+
+    def test_do_not_display_already_thrown_middle(self):
+        evs = [
+                  Event(EventType.NUMBER, 1),
+                  Event(EventType.NUMBER, 8),
+                  Event(EventType.ACTION, Action.TRIPLE),
+                  Event(EventType.ACTION, Action.CONFIRM)
+        ]
+        game = Cricket(1, TestingPoller(evs), RENDERER)
+        game.loop()
+        self.assertEqual("151617|  19|2025", RENDERER.lcd_first_line)
+        self.assertEqual(" 0 0 0|   0| 0 0", RENDERER.lcd_second_line)
