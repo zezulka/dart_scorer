@@ -16,7 +16,10 @@ def cricket_score_init():
 class Cricket(Game):
     def __init__(self, num_players, input_ctrl, output_ctrl):
         super().__init__(num_players, input_ctrl, output_ctrl)
-        self.players = [cricket_score_init()] * num_players
+        aux = []
+        for i in range(0, num_players):
+            aux.append(cricket_score_init())
+        self.players = aux
 
     def over(self):
         return self.force_quit or reduce(lambda so_far, player: so_far or
@@ -61,6 +64,7 @@ class Cricket(Game):
             self.round.set_current_throw(zero_throw())
 
     def __next_round(self):
+        self.current_player = (self.current_player + 1) % self.num_players
         self.round.clear()
 
     def __points_to_string(self):
@@ -87,4 +91,5 @@ class Cricket(Game):
         curr_thrw = self.round.current_throw()
         if curr_thrw.points == 0:
             return ""
-        return str(curr_thrw.points) + curr_thrw.multiplier.to_string().lower()
+        return "{:4}".format(str(curr_thrw.points) + curr_thrw.multiplier.to_string().lower()) + "thr" + \
+               str(self.round.current_position_int() + 1)

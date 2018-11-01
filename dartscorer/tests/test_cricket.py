@@ -106,7 +106,22 @@ class TestCricket(unittest.TestCase):
         ]
         game = Cricket(1, TestingPoller(evs), RENDERER)
         game.loop()
-        self.assertEqual("15d", RENDERER.segment_text)
+        self.assertEqual("15d thr1", RENDERER.segment_text)
+
+    def test_score_display_segment(self):
+        evs = [
+                  Event(EventType.NUMBER, 1),
+                  Event(EventType.NUMBER, 5),
+                  Event(EventType.ACTION, Action.DOUBLE),
+                  Event(EventType.ACTION, Action.CONFIRM)
+        ] * 2
+        evs += [
+            Event(EventType.NUMBER, 1),
+            Event(EventType.NUMBER, 5)
+        ]
+        game = Cricket(1, TestingPoller(evs), RENDERER)
+        game.loop()
+        self.assertEqual("15  thr3", RENDERER.segment_text)
 
     def test_score_display_triple(self):
         evs = [
@@ -116,7 +131,7 @@ class TestCricket(unittest.TestCase):
         ]
         game = Cricket(1, TestingPoller(evs), RENDERER)
         game.loop()
-        self.assertEqual("15t", RENDERER.segment_text)
+        self.assertEqual("15t thr1", RENDERER.segment_text)
 
     def test_do_not_display_already_thrown_left_edge(self):
         evs = [
@@ -162,6 +177,53 @@ class TestCricket(unittest.TestCase):
                   Event(EventType.ACTION, Action.CONFIRM)
         ]
         game = Cricket(1, TestingPoller(evs), RENDERER)
+        game.loop()
+        self.assertEqual("1516   1819 2025", RENDERER.lcd_first_line)
+        self.assertEqual(" 0 0    0 0  0 0", RENDERER.lcd_second_line)
+
+    def test_two_players_logic(self):
+        evs = [
+            Event(EventType.NUMBER, 1),
+            Event(EventType.NUMBER, 7),
+            Event(EventType.ACTION, Action.TRIPLE),
+            Event(EventType.ACTION, Action.CONFIRM)
+        ]
+        game = Cricket(2, TestingPoller(evs), RENDERER)
+        game.loop()
+        expected = cricket_score_init()
+        expected[17] = 3
+        self.assertEqual(game.players[0], expected)
+        self.assertEqual(game.players[1], cricket_score_init())
+
+    def test_two_players_display(self):
+        evs = [
+            Event(EventType.NUMBER, 1),
+            Event(EventType.NUMBER, 7),
+            Event(EventType.ACTION, Action.CONFIRM),
+        ] * 3
+        evs += [
+            Event(EventType.NUMBER, 1),
+            Event(EventType.NUMBER, 6),
+            Event(EventType.ACTION, Action.TRIPLE)
+        ]
+        game = Cricket(2, TestingPoller(evs), RENDERER)
+        game.loop()
+        self.assertEqual("151617 1819 2025", RENDERER.lcd_first_line)
+        self.assertEqual(" 0 0 0  0 0  0 0", RENDERER.lcd_second_line)
+        self.assertEqual("16t thr1", RENDERER.segment_text)
+
+    def test_two_players_display_one_whole_round(self):
+        evs = [
+            Event(EventType.NUMBER, 1),
+            Event(EventType.NUMBER, 7),
+            Event(EventType.ACTION, Action.CONFIRM)
+        ] * 3
+        evs += [
+            Event(EventType.NUMBER, 1),
+            Event(EventType.NUMBER, 6),
+            Event(EventType.ACTION, Action.CONFIRM)
+        ] * 3
+        game = Cricket(2, TestingPoller(evs), RENDERER)
         game.loop()
         self.assertEqual("1516   1819 2025", RENDERER.lcd_first_line)
         self.assertEqual(" 0 0    0 0  0 0", RENDERER.lcd_second_line)

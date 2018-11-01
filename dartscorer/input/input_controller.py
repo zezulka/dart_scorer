@@ -102,11 +102,17 @@ class EventPoller:
 
     def wait_for_next_number(self):
         """This is a shortcut to the EventPoller.next_event() function which only returns a\
- number and throws away any other events."""
-        while True:
+ number and throws away any other events. It also waits for user confirmation."""
+        result = None
+        while not result:
             ev = self.next_event()
             if ev.e_type == EventType.NUMBER:
-                return ev.value
+                result = ev.value
+
+        while True:
+            ev = self.next_event()
+            if ev.e_type == EventType.ACTION and ev.value == Action.CONFIRM:
+                return result
 
     def next_event(self):
         """Returns next relevant event available from an input device.\
