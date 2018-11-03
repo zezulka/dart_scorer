@@ -3,18 +3,12 @@
 from sys import stderr as serr
 from select import select
 from enum import Enum
-from evdev import InputDevice, categorize, ecodes
+from evdev import InputDevice, ecodes
 from evdev.events import KeyEvent
 
 # Path to the numerical keyboard
 NUM_KEY_PATH = "/dev/input/by-id/usb-SIGMACHIP_USB_Keyboard-event-kbd"
 KEY_DOWN = KeyEvent.key_down
-CODE_TO_NUMBER_DICT = {
-    ecodes.KEY_KP0: 0, ecodes.KEY_KP1: 1, ecodes.KEY_KP2: 2,
-    ecodes.KEY_KP3: 3, ecodes.KEY_KP4: 4, ecodes.KEY_KP5: 5,
-    ecodes.KEY_KP6: 6, ecodes.KEY_KP7: 7, ecodes.KEY_KP8: 8,
-    ecodes.KEY_KP9: 9, ecodes.KEY_SPACE: 20, ecodes.KEY_KPDOT: 25
-}
 
 
 class Action(Enum):
@@ -33,6 +27,13 @@ class Action(Enum):
     UNDO = 6
 
 
+CODE_TO_NUMBER_DICT = {
+    ecodes.KEY_KP0: 0, ecodes.KEY_KP1: 1, ecodes.KEY_KP2: 2,
+    ecodes.KEY_KP3: 3, ecodes.KEY_KP4: 4, ecodes.KEY_KP5: 5,
+    ecodes.KEY_KP6: 6, ecodes.KEY_KP7: 7, ecodes.KEY_KP8: 8,
+    ecodes.KEY_KP9: 9, ecodes.KEY_SPACE: 20, ecodes.KEY_KPDOT: 25
+}
+
 # KEY_NUMLOCK
 CODE_TO_ACTION_DICT = {
     ecodes.KEY_KPENTER: Action.CONFIRM, ecodes.KEY_KPPLUS: Action.TRIPLE,
@@ -41,9 +42,19 @@ CODE_TO_ACTION_DICT = {
 }
 
 
+def code_to_number(code):
+    """Mapping from a scancode to the "nominal" value of the key."""
+    return CODE_TO_NUMBER_DICT[code]
+
+
+def code_to_action(code):
+    """Mapping from a scancode to an Action enum."""
+    return CODE_TO_ACTION_DICT[code]
+
+
 class EventType(Enum):
     """ Enum used for decoding the type of event.\
- NUMBER represents a multi-digit number."""
+ NUMBER represents a single digit number."""
     ACTION = 0
     NUMBER = 1
 
@@ -62,22 +73,6 @@ def number_pressed(code):
     """Returns a bool telling whether the scancode retrieved from an
  input device represents a number."""
     return code in CODE_TO_NUMBER_DICT
-
-
-def code_to_number(code):
-    """Mapping from a scancode to the "nominal" value of the key."""
-    return CODE_TO_NUMBER_DICT[code]
-
-
-def action_pressed(code):
-    """Returns a bool telling whether the scancode retrieved from an
- input device represents a game action."""
-    return code in CODE_TO_ACTION_DICT
-
-
-def code_to_action(code):
-    """Mapping from a scancode to an Action enum."""
-    return CODE_TO_ACTION_DICT[code]
 
 
 class EventPoller:
@@ -111,7 +106,7 @@ class EventPoller:
 
         while True:
             ev = self.next_event()
-            if ev.e_type == EventType.ACTION and ev.value == Action.CONFIRM:
+            if ev.e_type == EventType.ACTION and ev.value == ecodes.KEY_KPENTER:
                 return result
 
     def next_event(self):
@@ -127,8 +122,5 @@ class EventPoller:
                 self.ev_stack.append(Event(EventType.NUMBER, num % 10))
                 num = (num // 10) % 10
             return Event(EventType.NUMBER, num)
-        elif action_pressed(code):
-            return Event(EventType.ACTION, code_to_action(code))
         else:
-            print(categorize(event))
-            return self.next_event()
+            return Event(EventType.ACTION, code_to_action(code))

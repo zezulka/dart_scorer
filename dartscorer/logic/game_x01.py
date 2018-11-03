@@ -1,7 +1,15 @@
 from functools import reduce
+from .common import Game, GameVisitor
 
-from ..input.input_controller import Action
-from .common import Game, Multiplier, Throw, zero_throw
+
+class Confirm(GameVisitor):
+    def visit(self, game):
+        game.round.hop_to_next_position()
+        curr_pts = game.players[game.current_player] - game.round.points()
+        if curr_pts < 0:
+            game.output_ctrl.warning("Overthrow!")
+        if curr_pts <= 0 or game.round.is_over():
+            game.next_round()
 
 
 class GameX01(Game):
@@ -9,6 +17,9 @@ class GameX01(Game):
     def __init__(self, num_players, input_ctrl, output_ctrl, init_score=501):
         super().__init__(num_players, input_ctrl, output_ctrl)
         self.players = [init_score] * num_players
+
+    def confirm_action(self):
+        return Confirm
 
     def over(self):
         return self.force_quit or reduce(lambda x, y: x or y == 0, self.players, False)
@@ -18,39 +29,12 @@ class GameX01(Game):
         self.output_ctrl.lcd_set_first_line(self.__game_round_to_string())
         self.output_ctrl.segment_set_text(self.__points_to_string())
 
-    def action_submitted(self, action):
-        points_nominal = self.round.current_throw().points
-        if action == Action.DOUBLE:
-            self.round.set_current_throw(Throw(points_nominal, Multiplier.DOUBLE))
-        elif action == Action.TRIPLE:
-            if points_nominal == 25:
-                self.output_ctrl.warning("25T not valid!")
-            else:
-                self.round.set_current_throw(Throw(points_nominal, Multiplier.TRIPLE))
-        elif action == Action.CONFIRM:
-            self.round.hop_to_next_position()
-            curr_pts = self.players[self.current_player] - self.round.points()
-            if curr_pts < 0:
-                self.output_ctrl.warning("Overthrow!")
-            if curr_pts <= 0 or self.round.is_over():
-                self.__next_round()
-        elif action == Action.CLEAR:
-            self.round.set_current_throw(zero_throw())
-        elif action == Action.RESTART:
-            self.force_quit = True
-        elif action == Action.UNDO and \
-                not self.round.is_first_throw():
-            self.round.hop_to_next_position()  # 3 is congruent to -1 (mod 4)
-            self.round.hop_to_next_position()
-            self.round.hop_to_next_position()
-            self.round.set_current_throw(zero_throw())
-
     def __game_round_to_string(self):
         """ Returns a string representation of the current game round. In the case of X01,
  we show the player nominal value of each throw."""
         return self.round.to_string()
 
-    def __next_round(self):
+    def next_round(self):
         curr_pts = self.players[self.current_player] - self.round.points()
         if curr_pts >= 0:
             self.players[self.current_player] = curr_pts

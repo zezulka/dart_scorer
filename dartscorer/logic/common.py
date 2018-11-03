@@ -1,11 +1,63 @@
 from functools import reduce
 from enum import IntEnum, Enum, unique
 from abc import ABCMeta, abstractmethod
-from typing import Dict
 
 from ..input import input_controller
+from ..input.input_controller import Action
 
-MULT_TO_STR = {1: " ", 2: "D", 3: "T"}
+MULTIPLIER_TO_STR = {1: " ", 2: "D", 3: "T"}
+
+
+class GameVisitor:
+    """ Class representing abstract actions from the game logic point of view."""
+
+    """ Each extending class defines a behaviour for the given action. Most of 
+the actions will be very similar (or even the same)."""
+
+    @abstractmethod
+    def visit(self, _game):
+        pass
+
+
+class Double(GameVisitor):
+    def visit(self, game):
+        game.round.set_current_throw(Throw(game.round.current_throw().points, Multiplier.DOUBLE))
+
+
+class Triple(GameVisitor):
+    def visit(self, game):
+        points_nominal = game.round.current_throw().points
+        if points_nominal == 25:
+            game.output_ctrl.warning("25T not valid!")
+        else:
+            game.round.set_current_throw(Throw(points_nominal, Multiplier.TRIPLE))
+
+
+class Clear(GameVisitor):
+    def visit(self, game):
+        game.round.set_current_throw(zero_throw())
+
+
+class Restart(GameVisitor):
+    def visit(self, game):
+        game.force_quit = True
+
+
+class Undo(GameVisitor):
+    def visit(self, game):
+        game.round.hop_to_next_position()  # 3 is congruent to -1 (mod 4)
+        game.round.hop_to_next_position()
+        game.round.hop_to_next_position()
+        game.round.set_current_throw(zero_throw())
+
+
+# KEY_NUMLOCK
+
+ACTION_TO_VISITOR_DICT = {
+    Action.TRIPLE: Triple,
+    Action.DOUBLE: Double, Action.CLEAR: Clear,
+    Action.RESTART: Restart, Action.UNDO: Undo
+}
 
 
 class Multiplier(IntEnum):
@@ -14,7 +66,7 @@ class Multiplier(IntEnum):
     TRIPLE = 3
 
     def to_string(self):
-        return MULT_TO_STR[self.value]
+        return MULTIPLIER_TO_STR[self.value]
 
 
 class Throw:
@@ -114,6 +166,8 @@ class Game(metaclass=ABCMeta):
         self.num_players = num_players
         self.current_player = 0
         self.force_quit = False
+        self.action_to_visitor_dict = ACTION_TO_VISITOR_DICT
+        self.action_to_visitor_dict[Action.CONFIRM] = self.confirm_action()
 
     def __enter__(self):
         return self
@@ -133,10 +187,13 @@ new information is displayed to the output devices (usually a set of displays)."
         pass
 
     @abstractmethod
-    def action_submitted(self, _):
+    def confirm_action(self):
+        pass
+
+    def action_submitted(self, action):
         """ This method takes an action as its input and modifies internal state of the
 game object according to the game rules and the action itself."""
-        pass
+        self.action_to_visitor_dict[action]().visit(self)
 
     def digit_submitted(self, digit):
         """ This method takes a digit as its input and modifies internal state of the

@@ -1,7 +1,20 @@
-from ..input.input_controller import Action
-from .common import Game, Throw, Multiplier, zero_throw
+from .common import Game, GameVisitor
 from functools import reduce
 from collections import OrderedDict
+
+
+class Confirm(GameVisitor):
+    def visit(self, game):
+        thrw = game.round.current_throw()
+        (pts, mult) = (thrw.points, thrw.multiplier)
+        if pts >= 15:
+            next_score = game.players[game.current_player][pts] + mult
+            if next_score > 3:
+                next_score = 3
+            game.players[game.current_player][pts] = next_score
+        game.round.hop_to_next_position()
+        if game.round.is_over():
+            game.next_round()
 
 
 def cricket_score_init():
@@ -26,44 +39,19 @@ class Cricket(Game):
                                                                 reduce(lambda in_so_far, tup: in_so_far and tup == 3,
                                                                        player.values(), True), self.players, False)
 
+    def confirm_action(self):
+        return Confirm
+
+    def restart(self):
+        self.force_quit = True
+
     def refresh(self):
         point_str = self.__points_to_string()
         self.output_ctrl.lcd_set_first_line(point_str[0])
         self.output_ctrl.lcd_set_second_line(point_str[1])
         self.output_ctrl.segment_set_text(self.__game_round_to_string())
 
-    def action_submitted(self, action):
-        points_nominal = self.round.current_throw().points
-        if action == Action.DOUBLE:
-            self.round.set_current_throw(Throw(points_nominal, Multiplier.DOUBLE))
-        elif action == Action.TRIPLE:
-            if points_nominal == 25:
-                self.output_ctrl.warning("25T not valid!")
-            else:
-                self.round.set_current_throw(Throw(points_nominal, Multiplier.TRIPLE))
-        elif action == Action.CONFIRM:
-            thrw = self.round.current_throw()
-            (pts, mult) = (thrw.points, thrw.multiplier)
-            if pts >= 15:
-                next_score = self.players[self.current_player][pts] + mult
-                if next_score > 3:
-                    next_score = 3
-                self.players[self.current_player][pts] = next_score
-            self.round.hop_to_next_position()
-            if self.round.is_over():
-                self.__next_round()
-        elif action == Action.CLEAR:
-            self.round.set_current_throw(zero_throw())
-        elif action == Action.RESTART:
-            self.force_quit = True
-        elif action == Action.UNDO and \
-                not self.round.is_first_throw():
-            self.round.hop_to_next_position()  # 3 is congruent to -1 (mod 4)
-            self.round.hop_to_next_position()
-            self.round.hop_to_next_position()
-            self.round.set_current_throw(zero_throw())
-
-    def __next_round(self):
+    def next_round(self):
         self.current_player = (self.current_player + 1) % self.num_players
         self.round.clear()
 
