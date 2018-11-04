@@ -6,13 +6,13 @@ from .game_x01 import GameX01
 
 
 class UserConfig:
-    def __init__(self, num_players, game_type):
+    def __init__(self, num_players, game):
         if num_players < 1:
             raise ValueError("There must be at least one player in the game.")
-        if not game_type:
+        if not game:
             raise ValueError("No game selected.")
         self.num_players = num_players
-        self.game_type = game_type
+        self.game = game
 
 
 def get_user_config(output_ctrl, input_ctrl):
@@ -35,9 +35,9 @@ def game_factory():
     input_ctrl = EventPoller()
     output_ctrl = DisplayController()
     user_config = get_user_config(output_ctrl, input_ctrl)
-    if user_config.game_type == GameType.X01:
+    if user_config.game == GameType.X01:
         return GameX01(user_config.num_players, input_ctrl, output_ctrl)
-    elif user_config.game_type == GameType.Cricket:
+    elif user_config.game == GameType.Cricket:
         return Cricket(user_config.num_players, input_ctrl, output_ctrl)
     else:
         raise ValueError("Not supported yet.")

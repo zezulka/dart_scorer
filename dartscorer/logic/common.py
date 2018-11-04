@@ -166,6 +166,7 @@ class Game(metaclass=ABCMeta):
         self.num_players = num_players
         self.current_player = 0
         self.force_quit = False
+        self.config = self.default_config()
         self.action_to_visitor_dict = ACTION_TO_VISITOR_DICT
         self.action_to_visitor_dict[Action.CONFIRM] = self.confirm_action()
 
@@ -183,11 +184,22 @@ new information is displayed to the output devices (usually a set of displays)."
 
     @abstractmethod
     def over(self):
-        """ Returns a boolean value. True if the game is over, false otherwise."""
+        """:return: True if the game is over, False otherwise."""
         pass
 
     @abstractmethod
     def confirm_action(self):
+        """ The action Action.CONFIRM is usually the one which differs the most among games.
+Each is game is required to implement handler to this action as no abstract implementation
+would make no sense here.
+        """
+        pass
+
+    @abstractmethod
+    def default_config(self):
+        """
+        :return: vector of constraints which are interesting to the game
+        """
         pass
 
     def action_submitted(self, action):
